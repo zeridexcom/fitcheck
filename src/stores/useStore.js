@@ -6,7 +6,8 @@ const useStore = create(
         (set, get) => ({
             // === ONBOARDING STATE ===
             hasOnboarded: false,
-            apiKey: null,
+            // API key from environment variable (embedded, no user input needed)
+            apiKey: import.meta.env.VITE_OPENAI_API_KEY || null,
 
             // === USER PROFILE ===
             profile: {
