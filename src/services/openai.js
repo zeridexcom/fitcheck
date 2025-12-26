@@ -1,25 +1,47 @@
-// OpenRouter API Service for AI features
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+// OpenAI API Service for AI features
+// Supports both OpenAI (sk-...) and OpenRouter (sk-or-v1-...) keys
+
+function getApiConfig(apiKey) {
+    if (apiKey?.startsWith('sk-or-v1-')) {
+        // OpenRouter key
+        return {
+            url: 'https://openrouter.ai/api/v1/chat/completions',
+            model: 'google/gemma-3-27b-it:free',
+            headers: {
+                'HTTP-Referer': window.location.origin,
+                'X-Title': 'FitCheck AI'
+            }
+        };
+    } else {
+        // OpenAI key
+        return {
+            url: 'https://api.openai.com/v1/chat/completions',
+            model: 'gpt-4o-mini',
+            headers: {}
+        };
+    }
+}
 
 // Analyze food image using Vision model
 export async function analyzeFoodImage(apiKey, imageBase64) {
-    const response = await fetch(OPENROUTER_API_URL, {
+    const config = getApiConfig(apiKey);
+
+    const response = await fetch(config.url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`,
-            'HTTP-Referer': window.location.origin,
-            'X-Title': 'FitCheck AI'
+            ...config.headers
         },
         body: JSON.stringify({
-            model: 'meta-llama/llama-3.2-11b-vision-instruct:free',
+            model: config.model,
             messages: [
                 {
                     role: 'user',
                     content: [
                         {
                             type: 'text',
-                            text: `You are a professional nutritionist AI. Analyze this food image and respond ONLY with a JSON object (no markdown, no extra text):
+                            text: `You are a professional nutritionist AI. Analyze this food image and respond ONLY with a JSON object (no markdown, no code blocks, no extra text):
 {
   "name": "Name of the dish/food item",
   "estimatedWeight": "Estimated weight in grams",
@@ -44,7 +66,7 @@ Be accurate. Consider portion sizes. If it's a nutrition label, extract exact va
                     ]
                 }
             ],
-            max_tokens: 1000,
+            max_tokens: 800,
         }),
     });
 
@@ -62,8 +84,9 @@ Be accurate. Consider portion sizes. If it's a nutrition label, extract exact va
     }
 
     try {
-        // Parse the JSON response
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        // Parse the JSON response - remove any markdown code blocks
+        let cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             return JSON.parse(jsonMatch[0]);
         }
@@ -76,6 +99,8 @@ Be accurate. Consider portion sizes. If it's a nutrition label, extract exact va
 
 // Chat with AI coach
 export async function chatWithCoach(apiKey, messages, userProfile) {
+    const config = getApiConfig(apiKey);
+
     const systemPrompt = `You are FitCheck AI Coach, a friendly and expert fitness & nutrition assistant.
 
 User Profile:
@@ -86,23 +111,23 @@ User Profile:
 - Daily Targets: ${userProfile.targets?.calories || 2000} kcal, ${userProfile.targets?.protein || 150}g protein
 
 Help with diet plans, workout routines, nutrition questions, and motivation.
-Be encouraging, practical, and use bullet points. Add relevant emojis occasionally.`;
+Be encouraging, practical, and use bullet points. Add relevant emojis occasionally.
+Keep responses concise but helpful.`;
 
-    const response = await fetch(OPENROUTER_API_URL, {
+    const response = await fetch(config.url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`,
-            'HTTP-Referer': window.location.origin,
-            'X-Title': 'FitCheck AI'
+            ...config.headers
         },
         body: JSON.stringify({
-            model: 'meta-llama/llama-3.2-11b-vision-instruct:free',
+            model: config.model,
             messages: [
                 { role: 'system', content: systemPrompt },
                 ...messages.map(m => ({ role: m.role, content: m.content }))
             ],
-            max_tokens: 1500,
+            max_tokens: 1000,
         }),
     });
 
