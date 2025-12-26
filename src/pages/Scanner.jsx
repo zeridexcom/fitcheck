@@ -276,19 +276,33 @@ export default function Scanner() {
                         exit={{ opacity: 0, y: 30 }}
                     >
                         <Card3D className="mb-lg" glowColor="var(--accent-primary)">
-                            <div className="flex items-center gap-md mb-lg">
+                            <div className="flex items-center gap-md mb-md">
                                 <motion.div
                                     animate={{ rotate: [0, 360] }}
                                     transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
                                 >
                                     <Sparkles size={22} style={{ color: 'var(--accent-primary)' }} />
                                 </motion.div>
-                                <div>
+                                <div style={{ flex: 1 }}>
                                     <h4 style={{ marginBottom: '2px' }}>{result.name}</h4>
-                                    <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)', margin: 0 }}>
-                                        {result.estimatedWeight || 'Portion analyzed'}
-                                    </p>
                                 </div>
+                                {result.estimatedWeight && (
+                                    <motion.div
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                        style={{
+                                            background: 'linear-gradient(135deg, var(--accent-secondary), #0099CC)',
+                                            padding: '6px 14px',
+                                            borderRadius: 'var(--radius-full)',
+                                            fontSize: 'var(--font-size-sm)',
+                                            fontWeight: 600,
+                                            color: '#000',
+                                            boxShadow: '0 4px 15px rgba(0, 212, 255, 0.3)'
+                                        }}
+                                    >
+                                        {result.estimatedWeight}
+                                    </motion.div>
+                                )}
                             </div>
 
                             {/* Main Calories */}
