@@ -12,7 +12,7 @@ export async function analyzeFoodImage(apiKey, imageBase64) {
             'X-Title': 'FitCheck AI'
         },
         body: JSON.stringify({
-            model: 'meta-llama/llama-4-maverick:free',
+            model: 'meta-llama/llama-3.2-11b-vision-instruct:free',
             messages: [
                 {
                     role: 'user',
@@ -97,7 +97,7 @@ Be encouraging, practical, and use bullet points. Add relevant emojis occasional
             'X-Title': 'FitCheck AI'
         },
         body: JSON.stringify({
-            model: 'meta-llama/llama-4-maverick:free',
+            model: 'meta-llama/llama-3.2-11b-vision-instruct:free',
             messages: [
                 { role: 'system', content: systemPrompt },
                 ...messages.map(m => ({ role: m.role, content: m.content }))
