@@ -12,7 +12,7 @@ export async function analyzeFoodImage(apiKey, imageBase64) {
             'X-Title': 'FitCheck AI'
         },
         body: JSON.stringify({
-            model: 'google/gemini-2.0-flash-exp:free',
+            model: 'meta-llama/llama-4-maverick:free',
             messages: [
                 {
                     role: 'user',
@@ -49,12 +49,17 @@ Be accurate. Consider portion sizes. If it's a nutrition label, extract exact va
     });
 
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || 'Failed to analyze image');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error?.message || `API Error: ${response.status}`);
     }
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content;
+    const content = data.choices?.[0]?.message?.content;
+
+    if (!content) {
+        throw new Error('No response from AI');
+    }
 
     try {
         // Parse the JSON response
@@ -92,7 +97,7 @@ Be encouraging, practical, and use bullet points. Add relevant emojis occasional
             'X-Title': 'FitCheck AI'
         },
         body: JSON.stringify({
-            model: 'google/gemini-2.0-flash-exp:free',
+            model: 'meta-llama/llama-4-maverick:free',
             messages: [
                 { role: 'system', content: systemPrompt },
                 ...messages.map(m => ({ role: m.role, content: m.content }))
@@ -102,10 +107,11 @@ Be encouraging, practical, and use bullet points. Add relevant emojis occasional
     });
 
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error?.message || 'Failed to get response');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error?.message || `API Error: ${response.status}`);
     }
 
     const data = await response.json();
-    return data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+    return data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
 }
