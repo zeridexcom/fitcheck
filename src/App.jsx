@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import useStore from './stores/useStore';
 import BottomNav from './components/BottomNav';
+import ParticleBackground from './components/ParticleBackground';
 
 // Onboarding Pages
 import Welcome from './pages/Onboarding/Welcome';
@@ -24,21 +25,25 @@ function AppContent() {
   // If not onboarded, show onboarding flow
   if (!hasOnboarded) {
     return (
-      <AnimatePresence mode="wait">
-        <Routes>
-          <Route path="/onboarding" element={<Welcome />} />
-          <Route path="/onboarding/goal" element={<GoalSelect />} />
-          <Route path="/onboarding/profile" element={<ProfileSetup />} />
-          <Route path="/onboarding/api" element={<ApiSetup />} />
-          <Route path="*" element={<Navigate to="/onboarding" replace />} />
-        </Routes>
-      </AnimatePresence>
+      <>
+        <ParticleBackground />
+        <AnimatePresence mode="wait">
+          <Routes>
+            <Route path="/onboarding" element={<Welcome />} />
+            <Route path="/onboarding/goal" element={<GoalSelect />} />
+            <Route path="/onboarding/profile" element={<ProfileSetup />} />
+            <Route path="/onboarding/api" element={<ApiSetup />} />
+            <Route path="*" element={<Navigate to="/onboarding" replace />} />
+          </Routes>
+        </AnimatePresence>
+      </>
     );
   }
 
   // Main app with bottom nav
   return (
     <>
+      <ParticleBackground />
       <AnimatePresence mode="wait">
         <Routes>
           <Route path="/" element={<Dashboard />} />
