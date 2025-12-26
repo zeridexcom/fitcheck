@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Camera, Flame, Zap, Activity, Sparkles } from 'lucide-react';
+import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import useStore from '../stores/useStore';
 import ProgressRing from '../components/ProgressRing';
 import MealCard from '../components/MealCard';
@@ -9,26 +10,74 @@ import GlowButton from '../components/GlowButton';
 
 export default function Dashboard() {
     const navigate = useNavigate();
-    const { profile, targets, getTodaysMeals, getTodaysTotals, deleteMeal } = useStore();
+    const {
+        profile, targets, getTodaysMeals, getTodaysTotals, deleteMeal,
+        streaks, waterIntake, waterGoal, addWater, achievements, getNewAchievements
+    } = useStore();
+
+    const [showAchievement, setShowAchievement] = useState(null);
 
     const todaysMeals = getTodaysMeals();
     const totals = getTodaysTotals();
+    const today = new Date().toISOString().split('T')[0];
+    const todayWater = waterIntake[today] || 0;
+    const waterPercent = Math.min((todayWater / waterGoal) * 100, 100);
 
-    // Calculate percentages
+    // Check for new achievements
+    useEffect(() => {
+        const newAchievements = getNewAchievements();
+        if (newAchievements.length > 0 && !showAchievement) {
+            setShowAchievement(newAchievements[0]);
+            setTimeout(() => setShowAchievement(null), 4000);
+        }
+    }, [achievements]);
+
     const caloriePercent = Math.min(Math.round((totals.calories / targets.calories) * 100), 100);
     const proteinPercent = Math.min(Math.round((totals.protein / targets.protein) * 100), 100);
     const carbsPercent = Math.min(Math.round((totals.carbs / targets.carbs) * 100), 100);
     const fatPercent = Math.min(Math.round((totals.fat / targets.fat) * 100), 100);
 
-    // Greeting based on time
     const hour = new Date().getHours();
     const greeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
-
     const remainingCalories = Math.max(targets.calories - totals.calories, 0);
 
     return (
         <div className="screen" style={{ position: 'relative', zIndex: 1 }}>
-            {/* Header */}
+            {/* Achievement Popup */}
+            <AnimatePresence>
+                {showAchievement && (
+                    <motion.div
+                        initial={{ y: -100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -100, opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            top: 60,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            zIndex: 1000,
+                            background: 'linear-gradient(135deg, var(--accent-primary), #00CC6A)',
+                            padding: '16px 24px',
+                            borderRadius: 'var(--radius-full)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            boxShadow: '0 10px 40px rgba(0,255,135,0.4)',
+                            color: '#000',
+                            fontWeight: 600
+                        }}
+                    >
+                        <span style={{ fontSize: '24px' }}>{showAchievement.icon}</span>
+                        <div>
+                            <div style={{ fontSize: 'var(--font-size-xs)', opacity: 0.8 }}>Achievement Unlocked!</div>
+                            <div>{showAchievement.name}</div>
+                        </div>
+                        <Trophy size={20} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Header with Streak */}
             <motion.div
                 className="screen-header"
                 initial={{ opacity: 0, y: -20 }}
@@ -61,73 +110,88 @@ export default function Dashboard() {
                         </motion.div>
                     </motion.h2>
                 </div>
-                <motion.div
-                    style={{ textAlign: 'right' }}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                >
-                    <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-                        {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                    </p>
-                </motion.div>
+
+                {/* Streak Badge */}
+                {streaks.currentStreak > 0 && (
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'linear-gradient(135deg, rgba(255, 159, 67, 0.2), transparent)',
+                            padding: '8px 14px',
+                            borderRadius: 'var(--radius-full)',
+                            border: '1px solid rgba(255, 159, 67, 0.3)'
+                        }}
+                    >
+                        <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ repeat: Infinity, duration: 1 }}
+                        >
+                            <Flame size={18} style={{ color: 'var(--accent-orange)' }} />
+                        </motion.div>
+                        <span style={{ fontWeight: 700, color: 'var(--accent-orange)', fontFamily: 'var(--font-heading)' }}>
+                            {streaks.currentStreak}
+                        </span>
+                    </motion.div>
+                )}
             </motion.div>
 
-            {/* Main Calorie Ring - 3D Card */}
+            {/* Main Calorie Ring */}
             <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ delay: 0.2, type: 'spring' }}
             >
                 <Card3D className="mb-lg" glowColor="var(--accent-primary)">
-                    <div className="flex items-center justify-center" style={{ padding: '24px 0' }}>
+                    <div className="flex items-center justify-center" style={{ padding: '20px 0' }}>
                         <div style={{ position: 'relative' }}>
                             <ProgressRing
                                 progress={caloriePercent}
-                                size={180}
-                                strokeWidth={16}
+                                size={160}
+                                strokeWidth={14}
                                 color="var(--accent-primary)"
                             >
                                 <motion.div
                                     className="icon-badge icon-badge-primary"
-                                    style={{ marginBottom: '6px', width: 40, height: 40 }}
+                                    style={{ marginBottom: '4px', width: 36, height: 36 }}
                                     animate={{
                                         boxShadow: ['0 0 20px rgba(0,255,135,0.3)', '0 0 40px rgba(0,255,135,0.5)', '0 0 20px rgba(0,255,135,0.3)']
                                     }}
                                     transition={{ repeat: Infinity, duration: 2 }}
                                 >
-                                    <Flame size={20} />
+                                    <Flame size={18} />
                                 </motion.div>
                                 <motion.div
-                                    style={{ fontSize: '36px', fontWeight: 700, fontFamily: 'var(--font-heading)' }}
+                                    style={{ fontSize: '32px', fontWeight: 700, fontFamily: 'var(--font-heading)' }}
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
                                     transition={{ delay: 0.5, type: 'spring' }}
                                 >
                                     {totals.calories}
                                 </motion.div>
-                                <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-tertiary)' }}>
+                                <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>
                                     / {targets.calories} kcal
                                 </div>
                             </ProgressRing>
 
-                            {/* Floating indicator */}
                             <motion.div
                                 style={{
                                     position: 'absolute',
-                                    top: -10,
-                                    right: -10,
+                                    top: -8,
+                                    right: -8,
                                     background: 'linear-gradient(135deg, var(--accent-secondary), #0099CC)',
                                     borderRadius: 'var(--radius-full)',
-                                    padding: '6px 14px',
+                                    padding: '4px 12px',
                                     fontSize: 'var(--font-size-xs)',
                                     fontWeight: 600,
                                     color: '#000',
-                                    boxShadow: '0 4px 20px rgba(0, 212, 255, 0.4)'
                                 }}
-                                initial={{ scale: 0, rotate: -20 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                transition={{ delay: 0.7, type: 'spring' }}
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ delay: 0.7 }}
                             >
                                 {remainingCalories} left
                             </motion.div>
@@ -135,7 +199,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Macro Rings */}
-                    <div className="macro-rings" style={{ marginTop: '8px' }}>
+                    <div className="macro-rings" style={{ marginTop: '4px' }}>
                         {[
                             { label: 'Protein', value: totals.protein, target: targets.protein, percent: proteinPercent, color: 'var(--accent-orange)' },
                             { label: 'Carbs', value: totals.carbs, target: targets.carbs, percent: carbsPercent, color: 'var(--accent-secondary)' },
@@ -147,15 +211,14 @@ export default function Dashboard() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 + i * 0.1 }}
-                                whileHover={{ scale: 1.1 }}
                             >
                                 <ProgressRing
                                     progress={macro.percent}
-                                    size={68}
-                                    strokeWidth={6}
+                                    size={56}
+                                    strokeWidth={5}
                                     color={macro.color}
                                 >
-                                    <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 700, fontFamily: 'var(--font-heading)' }}>
+                                    <span style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-heading)' }}>
                                         {macro.value}g
                                     </span>
                                 </ProgressRing>
@@ -164,6 +227,59 @@ export default function Dashboard() {
                         ))}
                     </div>
                 </Card3D>
+            </motion.div>
+
+            {/* Quick Water Add */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="glass-card mb-lg"
+                style={{ padding: '16px' }}
+            >
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-md">
+                        <div className="icon-badge icon-badge-secondary" style={{ width: 40, height: 40 }}>
+                            <Droplets size={18} />
+                        </div>
+                        <div>
+                            <p style={{ fontWeight: 600, fontSize: 'var(--font-size-sm)', marginBottom: '2px' }}>Hydration</p>
+                            <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-xs)' }}>
+                                {todayWater}ml / {waterGoal}ml
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-sm">
+                        {/* Mini progress bar */}
+                        <div style={{ width: 60, height: 6, background: 'var(--glass-bg)', borderRadius: 'var(--radius-full)' }}>
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${waterPercent}%` }}
+                                style={{ height: '100%', background: 'var(--accent-secondary)', borderRadius: 'var(--radius-full)' }}
+                            />
+                        </div>
+                        <motion.button
+                            onClick={() => addWater(250)}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: '50%',
+                                background: 'var(--accent-secondary)',
+                                border: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#000',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <Plus size={18} />
+                        </motion.button>
+                    </div>
+                </div>
             </motion.div>
 
             {/* Quick Actions */}
@@ -178,28 +294,12 @@ export default function Dashboard() {
                     onClick={() => navigate('/scanner')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{
-                        padding: '18px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '10px',
-                        cursor: 'pointer',
-                        border: 'none'
-                    }}
+                    style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', border: 'none' }}
                 >
-                    <motion.div
-                        className="icon-badge icon-badge-primary"
-                        animate={{
-                            boxShadow: ['0 0 15px rgba(0,255,135,0.2)', '0 0 30px rgba(0,255,135,0.4)', '0 0 15px rgba(0,255,135,0.2)']
-                        }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                    >
-                        <Camera size={22} />
-                    </motion.div>
-                    <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
-                        Scan Food
-                    </span>
+                    <div className="icon-badge icon-badge-primary" style={{ width: 40, height: 40 }}>
+                        <Camera size={18} />
+                    </div>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Scan</span>
                 </motion.button>
 
                 <motion.button
@@ -207,22 +307,12 @@ export default function Dashboard() {
                     onClick={() => navigate('/workout')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{
-                        padding: '18px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '10px',
-                        cursor: 'pointer',
-                        border: 'none'
-                    }}
+                    style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', border: 'none' }}
                 >
-                    <div className="icon-badge icon-badge-secondary">
-                        <Activity size={22} />
+                    <div className="icon-badge icon-badge-orange" style={{ width: 40, height: 40 }}>
+                        <Activity size={18} />
                     </div>
-                    <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
-                        Workout
-                    </span>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Workout</span>
                 </motion.button>
 
                 <motion.button
@@ -230,22 +320,12 @@ export default function Dashboard() {
                     onClick={() => navigate('/coach')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{
-                        padding: '18px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '10px',
-                        cursor: 'pointer',
-                        border: 'none'
-                    }}
+                    style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', border: 'none' }}
                 >
-                    <div className="icon-badge icon-badge-purple">
-                        <Sparkles size={22} />
+                    <div className="icon-badge icon-badge-purple" style={{ width: 40, height: 40 }}>
+                        <Sparkles size={18} />
                     </div>
-                    <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
-                        AI Coach
-                    </span>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Coach</span>
                 </motion.button>
             </motion.div>
 
@@ -264,7 +344,7 @@ export default function Dashboard() {
 
                 <AnimatePresence>
                     {todaysMeals.length > 0 ? (
-                        todaysMeals.map((meal, i) => (
+                        todaysMeals.slice(0, 3).map((meal, i) => (
                             <motion.div
                                 key={meal.id}
                                 initial={{ opacity: 0, x: -20 }}
@@ -277,33 +357,18 @@ export default function Dashboard() {
                     ) : (
                         <motion.div
                             className="glass-card text-center"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            style={{ padding: '48px 24px' }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            style={{ padding: '32px 24px' }}
                         >
-                            <motion.div
-                                className="icon-badge icon-badge-primary"
-                                style={{ margin: '0 auto 20px', width: 72, height: 72 }}
-                                animate={{
-                                    y: [0, -8, 0],
-                                    boxShadow: ['0 0 30px rgba(0,255,135,0.2)', '0 0 50px rgba(0,255,135,0.4)', '0 0 30px rgba(0,255,135,0.2)']
-                                }}
-                                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-                            >
-                                <Camera size={32} />
-                            </motion.div>
-                            <p style={{ color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 500 }}>
-                                No meals logged today
-                            </p>
-                            <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-                                Tap below to scan your first meal!
-                            </p>
-                            <motion.div style={{ marginTop: '24px' }}>
-                                <GlowButton onClick={() => navigate('/scanner')} className="btn-lg">
-                                    <Camera size={18} />
-                                    Scan Food Now
-                                </GlowButton>
-                            </motion.div>
+                            <div className="icon-badge icon-badge-primary" style={{ margin: '0 auto 16px', width: 56, height: 56 }}>
+                                <Camera size={24} />
+                            </div>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>No meals logged yet</p>
+                            <GlowButton onClick={() => navigate('/scanner')}>
+                                <Camera size={16} />
+                                Scan Food
+                            </GlowButton>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -313,16 +378,13 @@ export default function Dashboard() {
             <motion.button
                 className="fab"
                 onClick={() => navigate('/scanner')}
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.8, type: 'spring', stiffness: 200 }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.8, type: 'spring' }}
                 whileHover={{ scale: 1.15, rotate: 90 }}
                 whileTap={{ scale: 0.95 }}
-                style={{
-                    boxShadow: '0 8px 40px rgba(0, 255, 135, 0.5)'
-                }}
             >
-                <Plus size={30} strokeWidth={2.5} />
+                <Plus size={28} />
             </motion.button>
         </div>
     );

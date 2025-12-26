@@ -13,6 +13,7 @@ import ApiSetup from './pages/Onboarding/ApiSetup';
 // Main Pages
 import Dashboard from './pages/Dashboard';
 import Scanner from './pages/Scanner';
+import Water from './pages/Water';
 import Workout from './pages/Workout';
 import Coach from './pages/Coach';
 import Progress from './pages/Progress';
@@ -22,7 +23,6 @@ import './index.css';
 function AppContent() {
   const { hasOnboarded } = useStore();
 
-  // If not onboarded, show onboarding flow
   if (!hasOnboarded) {
     return (
       <>
@@ -40,7 +40,6 @@ function AppContent() {
     );
   }
 
-  // Main app with bottom nav
   return (
     <>
       <ParticleBackground />
@@ -48,6 +47,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/scanner" element={<Scanner />} />
+          <Route path="/water" element={<Water />} />
           <Route path="/workout" element={<Workout />} />
           <Route path="/coach" element={<Coach />} />
           <Route path="/progress" element={<Progress />} />
