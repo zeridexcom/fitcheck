@@ -2,9 +2,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import useStore from './stores/useStore';
+import Link from 'react-router-dom';
 import BottomNav from './components/BottomNav';
 import ParticleBackground from './components/ParticleBackground';
-import VoiceAgent from './components/VoiceAgent';
+import FitBuddyAgent from './components/FitBuddyAgent';
+import fitBuddy from './services/fitbuddy';
 
 // Onboarding Pages
 import Welcome from './pages/Onboarding/Welcome';
@@ -36,7 +38,6 @@ const THEMES = {
 
 function AppContent() {
   const { hasOnboarded } = useStore();
-  const [showVoice, setShowVoice] = useState(false);
 
   // Load saved theme
   useEffect(() => {
@@ -46,6 +47,10 @@ function AppContent() {
       document.documentElement.style.setProperty('--accent-secondary', THEMES[savedTheme].secondary);
     }
   }, []);
+
+  const handleManualVoiceTrigger = () => {
+    fitBuddy.wakeUp();
+  };
 
   if (!hasOnboarded) {
     return (
@@ -69,7 +74,7 @@ function AppContent() {
       <ParticleBackground />
       <AnimatePresence mode="wait">
         <Routes>
-          <Route path="/" element={<Dashboard onVoiceClick={() => setShowVoice(true)} />} />
+          <Route path="/" element={<Dashboard onVoiceClick={handleManualVoiceTrigger} />} />
           <Route path="/scanner" element={<Scanner />} />
           <Route path="/water" element={<Water />} />
           <Route path="/workout" element={<Workout />} />
@@ -82,7 +87,7 @@ function AppContent() {
         </Routes>
       </AnimatePresence>
       <BottomNav />
-      <VoiceAgent isOpen={showVoice} onClose={() => setShowVoice(false)} />
+      <FitBuddyAgent alwaysListening={true} />
     </>
   );
 }

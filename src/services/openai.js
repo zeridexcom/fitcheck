@@ -140,3 +140,43 @@ Keep responses concise but helpful.`;
     const data = await response.json();
     return data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
 }
+
+// Simple ask function for FitBuddy
+export async function askCoach(question) {
+    // Get API key from store or env
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+
+    if (!apiKey) {
+        throw new Error('No API key configured. Please add VITE_OPENAI_API_KEY to your .env file.');
+    }
+
+    const config = getApiConfig(apiKey);
+
+    const response = await fetch(config.url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+            ...config.headers
+        },
+        body: JSON.stringify({
+            model: config.model,
+            messages: [
+                {
+                    role: 'system',
+                    content: 'You are FitBuddy, a helpful fitness and nutrition assistant. Be brief, friendly, and helpful. Keep responses under 100 words.'
+                },
+                { role: 'user', content: question }
+            ],
+            max_tokens: 300,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `API Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || 'Sorry, I could not answer that.';
+}
