@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer } from 'lucide-react';
+import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import useStore from '../stores/useStore';
@@ -7,12 +7,14 @@ import ProgressRing from '../components/ProgressRing';
 import MealCard from '../components/MealCard';
 import Card3D from '../components/Card3D';
 import GlowButton from '../components/GlowButton';
+import TodayWorkout from '../components/TodayWorkout';
 
 export default function Dashboard({ onVoiceClick }) {
     const navigate = useNavigate();
     const {
         profile, targets, getTodaysMeals, getTodaysTotals, deleteMeal,
-        streaks, waterIntake, waterGoal, addWater, achievements, getNewAchievements
+        streaks, waterIntake, waterGoal, addWater, achievements, getNewAchievements,
+        workoutPlan
     } = useStore();
 
     const [showAchievement, setShowAchievement] = useState(null);
@@ -342,6 +344,9 @@ export default function Dashboard({ onVoiceClick }) {
                     <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Coach</span>
                 </motion.button>
             </motion.div>
+
+            {/* Today's Workout - if workout plan exists */}
+            {workoutPlan && <TodayWorkout />}
 
             {/* Today's Meals */}
             <motion.div

@@ -71,6 +71,25 @@ const useStore = create(
                 history: [], // { date, plan, duration, completed }
             },
 
+            // === WORKOUT PLAN ===
+            workoutPlan: null, // Generated workout plan
+
+            // === TODAY'S WORKOUT ===
+            todayWorkout: {
+                exercises: [],
+                completedExercises: [],
+            },
+
+            // === SUPPLEMENTS ===
+            supplements: [],
+            supplementPresets: [
+                { id: 'creatine', name: 'Creatine', amount: 5, unit: 'g' },
+                { id: 'protein', name: 'Protein Shake', amount: 30, unit: 'g' },
+                { id: 'bcaa', name: 'BCAA', amount: 5, unit: 'g' },
+                { id: 'multivitamin', name: 'Multivitamin', amount: 1, unit: 'tablet' },
+                { id: 'omega3', name: 'Omega-3', amount: 1000, unit: 'mg' },
+            ],
+
             // === ACTIONS ===
 
             completeOnboarding: () => set({ hasOnboarded: true }),
@@ -369,6 +388,149 @@ const useStore = create(
                 fastingState: { ...state.fastingState, ...updates }
             })),
 
+            // === WORKOUT PLAN ACTIONS ===
+            setWorkoutPlan: (plan) => set({ workoutPlan: plan }),
+
+            generateWorkoutPlan: async (preferences, equipment) => {
+                // Generate workout plan based on preferences
+                const { goal, workout_place, days_per_week, experience } = preferences;
+
+                const WORKOUT_TEMPLATES = {
+                    fat_loss: {
+                        gym: ['Cardio + Full Body', 'Upper Body', 'HIIT', 'Lower Body', 'Core + Cardio', 'Full Body Circuit'],
+                        home: ['HIIT Cardio', 'Bodyweight Upper', 'Tabata', 'Bodyweight Legs', 'Core Blast', 'Full Body Burn'],
+                    },
+                    muscle_gain: {
+                        gym: ['Chest & Triceps', 'Back & Biceps', 'Legs & Shoulders', 'Push Day', 'Pull Day', 'Legs'],
+                        home: ['Push Workout', 'Pull Workout', 'Legs', 'Upper Body', 'Lower Body', 'Full Body'],
+                    },
+                    maintenance: {
+                        gym: ['Full Body A', 'Cardio', 'Full Body B', 'Active Recovery', 'Full Body C', 'Cardio'],
+                        home: ['Full Body', 'Cardio', 'Strength', 'Flexibility', 'Cardio', 'Full Body'],
+                    },
+                    endurance: {
+                        gym: ['Cardio Long', 'Circuit Training', 'HIIT', 'Steady State', 'Intervals', 'Recovery'],
+                        home: ['Running/Walking', 'Bodyweight Circuit', 'HIIT', 'Jump Rope', 'Cardio Mix', 'Stretching'],
+                    },
+                };
+
+                const EXERCISES = {
+                    'Chest & Triceps': [
+                        { name: 'Bench Press', sets: 4, reps: '8-10', weight: 'bodyweight + bar', notes: 'Keep back flat, lower to chest' },
+                        { name: 'Incline Dumbbell Press', sets: 3, reps: '10-12', weight: '15-25 lbs', notes: '45 degree angle' },
+                        { name: 'Cable Flyes', sets: 3, reps: '12-15', weight: 'light', notes: 'Squeeze at center' },
+                        { name: 'Tricep Pushdowns', sets: 3, reps: '12-15', weight: 'moderate', notes: 'Keep elbows locked' },
+                        { name: 'Overhead Tricep Extension', sets: 3, reps: '12', weight: 'moderate', notes: 'Full stretch at bottom' },
+                    ],
+                    'Back & Biceps': [
+                        { name: 'Pull-ups', sets: 4, reps: '8-10', weight: 'bodyweight', notes: 'Full hang to chin over bar' },
+                        { name: 'Barbell Rows', sets: 4, reps: '8-10', weight: '95-135 lbs', notes: 'Keep back straight' },
+                        { name: 'Lat Pulldowns', sets: 3, reps: '10-12', weight: 'moderate', notes: 'Wide grip, pull to chest' },
+                        { name: 'Dumbbell Curls', sets: 3, reps: '12', weight: '15-25 lbs', notes: 'Control the negative' },
+                        { name: 'Hammer Curls', sets: 3, reps: '12', weight: '15-25 lbs', notes: 'Neutral grip' },
+                    ],
+                    'Legs & Shoulders': [
+                        { name: 'Squats', sets: 4, reps: '8-10', weight: '135+ lbs', notes: 'Depth below parallel' },
+                        { name: 'Romanian Deadlift', sets: 3, reps: '10', weight: '95-135 lbs', notes: 'Feel hamstring stretch' },
+                        { name: 'Leg Press', sets: 3, reps: '12', weight: 'heavy', notes: 'Full range of motion' },
+                        { name: 'Overhead Press', sets: 4, reps: '8-10', weight: '65-95 lbs', notes: 'Core tight' },
+                        { name: 'Lateral Raises', sets: 3, reps: '15', weight: '10-15 lbs', notes: 'Slight bend in elbows' },
+                    ],
+                    'Push Workout': [
+                        { name: 'Push-ups', sets: 4, reps: '15-20', weight: 'bodyweight', notes: 'Full range, chest to floor' },
+                        { name: 'Pike Push-ups', sets: 3, reps: '10-12', weight: 'bodyweight', notes: 'Shoulders targeted' },
+                        { name: 'Diamond Push-ups', sets: 3, reps: '12', weight: 'bodyweight', notes: 'Triceps focus' },
+                        { name: 'Dips (chair)', sets: 3, reps: '12-15', weight: 'bodyweight', notes: 'Lower slowly' },
+                        { name: 'Plank to Push-up', sets: 3, reps: '10 each side', weight: 'bodyweight', notes: 'Core engaged' },
+                    ],
+                    'Pull Workout': [
+                        { name: 'Pull-ups', sets: 4, reps: 'max', weight: 'bodyweight', notes: 'Use assist if needed' },
+                        { name: 'Inverted Rows', sets: 3, reps: '12-15', weight: 'bodyweight', notes: 'Use table or bar' },
+                        { name: 'Doorframe Rows', sets: 3, reps: '15', weight: 'bodyweight', notes: 'Hold doorframe, lean back' },
+                        { name: 'Superman Holds', sets: 3, reps: '30 sec', weight: 'bodyweight', notes: 'Squeeze lower back' },
+                        { name: 'Bicep Curls', sets: 3, reps: '12', weight: 'available', notes: 'Use what you have' },
+                    ],
+                    'Legs': [
+                        { name: 'Goblet Squats', sets: 4, reps: '15', weight: 'available', notes: 'Hold weight at chest' },
+                        { name: 'Lunges', sets: 3, reps: '12 each leg', weight: 'bodyweight', notes: 'Step forward, knee down' },
+                        { name: 'Bulgarian Split Squat', sets: 3, reps: '10 each', weight: 'bodyweight', notes: 'Back foot elevated' },
+                        { name: 'Glute Bridges', sets: 3, reps: '15', weight: 'bodyweight', notes: 'Squeeze at top' },
+                        { name: 'Calf Raises', sets: 4, reps: '20', weight: 'bodyweight', notes: 'Full stretch and squeeze' },
+                    ],
+                    'HIIT Cardio': [
+                        { name: 'Burpees', sets: 4, reps: '30 sec', weight: 'bodyweight', notes: '10 sec rest between' },
+                        { name: 'Mountain Climbers', sets: 4, reps: '30 sec', weight: 'bodyweight', notes: 'Fast pace' },
+                        { name: 'Jump Squats', sets: 4, reps: '30 sec', weight: 'bodyweight', notes: 'Land soft' },
+                        { name: 'High Knees', sets: 4, reps: '30 sec', weight: 'bodyweight', notes: 'Drive knees up' },
+                        { name: 'Plank Jacks', sets: 4, reps: '30 sec', weight: 'bodyweight', notes: 'Keep hips level' },
+                    ],
+                };
+
+                const place = workout_place === 'both' ? 'gym' : workout_place;
+                const template = WORKOUT_TEMPLATES[goal]?.[place] || WORKOUT_TEMPLATES.maintenance.gym;
+
+                const days = [];
+                const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+                for (let i = 0; i < days_per_week; i++) {
+                    const workoutName = template[i % template.length];
+                    const exercises = EXERCISES[workoutName] || EXERCISES['Push Workout'];
+
+                    days.push({
+                        day: dayNames[i],
+                        name: workoutName,
+                        exercises: exercises.map((ex, idx) => ({
+                            ...ex,
+                            id: `${i}-${idx}`,
+                            completed: false,
+                        })),
+                    });
+                }
+
+                const plan = {
+                    id: Date.now().toString(),
+                    createdAt: new Date().toISOString(),
+                    preferences,
+                    equipment,
+                    daysPerWeek: days_per_week,
+                    days,
+                };
+
+                set({ workoutPlan: plan });
+                return plan;
+            },
+
+            setTodayWorkout: (exercises) => set({ todayWorkout: { exercises, completedExercises: [] } }),
+
+            completeExercise: (exerciseId) => set((state) => ({
+                todayWorkout: {
+                    ...state.todayWorkout,
+                    completedExercises: [...state.todayWorkout.completedExercises, exerciseId],
+                }
+            })),
+
+            uncompleteExercise: (exerciseId) => set((state) => ({
+                todayWorkout: {
+                    ...state.todayWorkout,
+                    completedExercises: state.todayWorkout.completedExercises.filter(id => id !== exerciseId),
+                }
+            })),
+
+            // === SUPPLEMENT ACTIONS ===
+            logSupplement: (supplement) => set((state) => ({
+                supplements: [...state.supplements, {
+                    ...supplement,
+                    id: Date.now().toString(),
+                    date: new Date().toISOString().split('T')[0],
+                    time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+                }]
+            })),
+
+            getTodaySupplements: () => {
+                const today = new Date().toISOString().split('T')[0];
+                return get().supplements.filter(s => s.date === today);
+            },
+
             // Reset all
             resetAll: () => set({
                 hasOnboarded: false,
@@ -404,6 +566,9 @@ const useStore = create(
                     plan: '16:8',
                     history: [],
                 },
+                workoutPlan: null,
+                todayWorkout: { exercises: [], completedExercises: [] },
+                supplements: [],
             }),
         }),
         {
