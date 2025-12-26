@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useStore from './stores/useStore';
 import BottomNav from './components/BottomNav';
 import ParticleBackground from './components/ParticleBackground';
@@ -20,12 +20,32 @@ import Workout from './pages/Workout';
 import Coach from './pages/Coach';
 import Progress from './pages/Progress';
 import Fasting from './pages/Fasting';
+import Settings from './pages/Settings';
+import Calendar from './pages/Calendar';
 
 import './index.css';
+
+// Apply saved theme on load
+const THEMES = {
+  default: { accent: '#00FF87', secondary: '#00D4FF' },
+  purple: { accent: '#A855F7', secondary: '#EC4899' },
+  orange: { accent: '#FF9F43', secondary: '#FF5E5E' },
+  blue: { accent: '#00D4FF', secondary: '#6366F1' },
+  pink: { accent: '#FF6B9D', secondary: '#A855F7' },
+};
 
 function AppContent() {
   const { hasOnboarded } = useStore();
   const [showVoice, setShowVoice] = useState(false);
+
+  // Load saved theme
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('fitcheck-theme');
+    if (savedTheme && THEMES[savedTheme]) {
+      document.documentElement.style.setProperty('--accent-primary', THEMES[savedTheme].accent);
+      document.documentElement.style.setProperty('--accent-secondary', THEMES[savedTheme].secondary);
+    }
+  }, []);
 
   if (!hasOnboarded) {
     return (
@@ -56,6 +76,8 @@ function AppContent() {
           <Route path="/coach" element={<Coach />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/fasting" element={<Fasting />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
