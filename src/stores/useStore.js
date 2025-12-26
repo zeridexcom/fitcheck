@@ -62,6 +62,15 @@ const useStore = create(
                 workout: { enabled: true, time: '18:00' },
             },
 
+            // === FASTING ===
+            fastingState: {
+                isActive: false,
+                startTime: null,
+                duration: 16, // hours
+                plan: '16:8',
+                history: [], // { date, plan, duration, completed }
+            },
+
             // === ACTIONS ===
 
             completeOnboarding: () => set({ hasOnboarded: true }),
@@ -328,6 +337,38 @@ const useStore = create(
                 return achievements.filter(a => a.unlockedAt > oneHourAgo);
             },
 
+            // === FASTING ACTIONS ===
+            startFast: (duration, plan) => set((state) => ({
+                fastingState: {
+                    ...state.fastingState,
+                    isActive: true,
+                    startTime: Date.now(),
+                    duration,
+                    plan,
+                }
+            })),
+
+            endFast: (completed) => set((state) => ({
+                fastingState: {
+                    ...state.fastingState,
+                    isActive: false,
+                    startTime: null,
+                    history: [
+                        ...state.fastingState.history,
+                        {
+                            date: new Date().toISOString(),
+                            plan: state.fastingState.plan,
+                            duration: state.fastingState.duration,
+                            completed,
+                        }
+                    ]
+                }
+            })),
+
+            updateFastingState: (updates) => set((state) => ({
+                fastingState: { ...state.fastingState, ...updates }
+            })),
+
             // Reset all
             resetAll: () => set({
                 hasOnboarded: false,
@@ -356,6 +397,13 @@ const useStore = create(
                     streakFreezeUsedDate: null,
                 },
                 achievements: [],
+                fastingState: {
+                    isActive: false,
+                    startTime: null,
+                    duration: 16,
+                    plan: '16:8',
+                    history: [],
+                },
             }),
         }),
         {

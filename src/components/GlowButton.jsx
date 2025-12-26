@@ -5,12 +5,12 @@ export default function GlowButton({ children, onClick, className = '', disabled
         primary: {
             bg: 'linear-gradient(135deg, #00FF87, #00CC6A)',
             glow: 'rgba(0, 255, 135, 0.4)',
-            text: '#000000'
+            text: '#ffffff'
         },
         secondary: {
             bg: 'linear-gradient(135deg, #00D4FF, #0099CC)',
             glow: 'rgba(0, 212, 255, 0.4)',
-            text: '#000000'
+            text: '#ffffff'
         },
         danger: {
             bg: 'linear-gradient(135deg, #FF5E5E, #CC4444)',

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy } from 'lucide-react';
+import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import useStore from '../stores/useStore';
@@ -8,7 +8,7 @@ import MealCard from '../components/MealCard';
 import Card3D from '../components/Card3D';
 import GlowButton from '../components/GlowButton';
 
-export default function Dashboard() {
+export default function Dashboard({ onVoiceClick }) {
     const navigate = useNavigate();
     const {
         profile, targets, getTodaysMeals, getTodaysTotals, deleteMeal,
@@ -63,13 +63,13 @@ export default function Dashboard() {
                             alignItems: 'center',
                             gap: '12px',
                             boxShadow: '0 10px 40px rgba(0,255,135,0.4)',
-                            color: '#000',
+                            color: '#fff',
                             fontWeight: 600
                         }}
                     >
                         <span style={{ fontSize: '24px' }}>{showAchievement.icon}</span>
                         <div>
-                            <div style={{ fontSize: 'var(--font-size-xs)', opacity: 0.8 }}>Achievement Unlocked!</div>
+                            <div style={{ fontSize: 'var(--font-size-xs)', opacity: 0.9 }}>Achievement Unlocked!</div>
                             <div>{showAchievement.name}</div>
                         </div>
                         <Trophy size={20} />
@@ -187,7 +187,7 @@ export default function Dashboard() {
                                     padding: '4px 12px',
                                     fontSize: 'var(--font-size-xs)',
                                     fontWeight: 600,
-                                    color: '#000',
+                                    color: '#fff',
                                 }}
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
@@ -272,7 +272,7 @@ export default function Dashboard() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: '#000',
+                                color: '#fff',
                                 cursor: 'pointer'
                             }}
                         >
@@ -284,46 +284,60 @@ export default function Dashboard() {
 
             {/* Quick Actions */}
             <motion.div
-                className="flex gap-md mb-lg"
+                className="flex gap-sm mb-lg"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
+                style={{ flexWrap: 'wrap' }}
             >
                 <motion.button
-                    className="glass-card flex-1"
+                    className="glass-card"
                     onClick={() => navigate('/scanner')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', border: 'none' }}
+                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
-                    <div className="icon-badge icon-badge-primary" style={{ width: 40, height: 40 }}>
-                        <Camera size={18} />
+                    <div className="icon-badge icon-badge-primary" style={{ width: 36, height: 36 }}>
+                        <Camera size={16} />
                     </div>
                     <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Scan</span>
                 </motion.button>
 
                 <motion.button
-                    className="glass-card flex-1"
-                    onClick={() => navigate('/workout')}
+                    className="glass-card"
+                    onClick={() => navigate('/fasting')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', border: 'none' }}
+                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
-                    <div className="icon-badge icon-badge-orange" style={{ width: 40, height: 40 }}>
-                        <Activity size={18} />
+                    <div className="icon-badge icon-badge-orange" style={{ width: 36, height: 36 }}>
+                        <Timer size={16} />
                     </div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Workout</span>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Fast</span>
                 </motion.button>
 
                 <motion.button
-                    className="glass-card flex-1"
+                    className="glass-card"
+                    onClick={onVoiceClick}
+                    whileHover={{ scale: 1.03, y: -4 }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                >
+                    <div className="icon-badge icon-badge-purple" style={{ width: 36, height: 36 }}>
+                        <Mic size={16} />
+                    </div>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Voice</span>
+                </motion.button>
+
+                <motion.button
+                    className="glass-card"
                     onClick={() => navigate('/coach')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', cursor: 'pointer', border: 'none' }}
+                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
-                    <div className="icon-badge icon-badge-purple" style={{ width: 40, height: 40 }}>
-                        <Sparkles size={18} />
+                    <div className="icon-badge icon-badge-secondary" style={{ width: 36, height: 36 }}>
+                        <Sparkles size={16} />
                     </div>
                     <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Coach</span>
                 </motion.button>
