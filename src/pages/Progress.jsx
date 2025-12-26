@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Scale, TrendingUp, Flame, Target, Plus, Check } from 'lucide-react';
+import { Scale, TrendingUp, Flame, Target, Check, Zap, Trophy, Calendar } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -75,7 +75,8 @@ export default function Progress() {
                 tension: 0.4,
                 pointBackgroundColor: '#00FF87',
                 pointBorderColor: '#00FF87',
-                pointRadius: 4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
             },
         ],
     };
@@ -88,12 +89,12 @@ export default function Progress() {
         },
         scales: {
             x: {
-                grid: { color: 'rgba(255,255,255,0.05)' },
-                ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } },
+                grid: { color: 'rgba(255,255,255,0.03)' },
+                ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10, family: 'Outfit' } },
             },
             y: {
-                grid: { color: 'rgba(255,255,255,0.05)' },
-                ticks: { color: 'rgba(255,255,255,0.4)', font: { size: 10 } },
+                grid: { color: 'rgba(255,255,255,0.03)' },
+                ticks: { color: 'rgba(255,255,255,0.35)', font: { size: 10, family: 'Outfit' } },
             },
         },
     };
@@ -104,6 +105,13 @@ export default function Progress() {
             setShowWeightModal(false);
         }
     };
+
+    const stats = [
+        { icon: Flame, label: 'Streak', value: streak, suffix: ' days', color: 'var(--accent-warning)' },
+        { icon: Zap, label: 'Avg Cal', value: avgCalories, suffix: '', color: 'var(--accent-secondary)' },
+        { icon: Trophy, label: 'Workouts', value: totalWorkouts, suffix: '', color: 'var(--accent-orange)' },
+        { icon: Target, label: 'Goal', value: profile.goal?.split('_')[0] || 'Set', suffix: '', color: 'var(--accent-purple)' },
+    ];
 
     return (
         <div className="screen">
@@ -128,33 +136,27 @@ export default function Progress() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
             >
-                <div className="nutrition-item">
-                    <div className="nutrition-value" style={{ color: 'var(--accent-primary)' }}>
-                        🔥 {streak}
-                    </div>
-                    <div className="nutrition-label">Day Streak</div>
-                </div>
-
-                <div className="nutrition-item">
-                    <div className="nutrition-value" style={{ color: 'var(--accent-secondary)' }}>
-                        {avgCalories}
-                    </div>
-                    <div className="nutrition-label">Avg Calories</div>
-                </div>
-
-                <div className="nutrition-item">
-                    <div className="nutrition-value" style={{ color: 'var(--accent-orange)' }}>
-                        {totalWorkouts}
-                    </div>
-                    <div className="nutrition-label">Workouts (7d)</div>
-                </div>
-
-                <div className="nutrition-item">
-                    <div className="nutrition-value" style={{ color: 'var(--accent-purple)' }}>
-                        {profile.goal?.replace('_', ' ').charAt(0).toUpperCase() || 'Set'}
-                    </div>
-                    <div className="nutrition-label">Goal</div>
-                </div>
+                {stats.map((stat, i) => {
+                    const Icon = stat.icon;
+                    return (
+                        <motion.div
+                            key={stat.label}
+                            className="nutrition-item"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 + i * 0.05 }}
+                            style={{ color: stat.color }}
+                        >
+                            <div className="flex items-center justify-center gap-sm" style={{ marginBottom: '8px' }}>
+                                <Icon size={18} />
+                            </div>
+                            <div className="nutrition-value" style={{ color: stat.color }}>
+                                {stat.value}{stat.suffix}
+                            </div>
+                            <div className="nutrition-label">{stat.label}</div>
+                        </motion.div>
+                    );
+                })}
             </motion.div>
 
             {/* Weight Section */}
@@ -171,7 +173,7 @@ export default function Progress() {
                         onClick={() => setShowWeightModal(true)}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        style={{ padding: '8px 16px', fontSize: 'var(--font-size-sm)' }}
+                        style={{ padding: '10px 16px', fontSize: 'var(--font-size-sm)' }}
                     >
                         <Scale size={16} />
                         Log Weight
@@ -184,8 +186,10 @@ export default function Progress() {
                             <Line data={weightData} options={chartOptions} />
                         </div>
                     ) : (
-                        <div className="text-center" style={{ padding: '32px' }}>
-                            <Scale size={40} style={{ color: 'var(--text-tertiary)', marginBottom: '16px' }} />
+                        <div className="text-center" style={{ padding: '40px 24px' }}>
+                            <div className="icon-badge icon-badge-primary" style={{ margin: '0 auto 16px', width: 64, height: 64 }}>
+                                <Scale size={28} />
+                            </div>
                             <p style={{ color: 'var(--text-secondary)' }}>
                                 Start logging your weight to see trends
                             </p>
@@ -203,7 +207,10 @@ export default function Progress() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
             >
-                <h4 className="mb-md">This Week's Calories</h4>
+                <div className="flex items-center gap-sm mb-md">
+                    <Calendar size={18} style={{ color: 'var(--text-tertiary)' }} />
+                    <h4>This Week</h4>
+                </div>
                 <div className="glass-card">
                     <div className="flex justify-between" style={{ height: '120px', alignItems: 'flex-end' }}>
                         {last7Days.map((date, i) => {
@@ -223,19 +230,21 @@ export default function Progress() {
                                         animate={{ height: `${Math.max(heightPercent, 5)}%` }}
                                         transition={{ delay: 0.4 + i * 0.05, duration: 0.5 }}
                                         style={{
-                                            width: '60%',
+                                            width: '55%',
                                             background: isToday
-                                                ? 'linear-gradient(to top, var(--accent-primary), rgba(0,255,135,0.3))'
+                                                ? 'linear-gradient(to top, var(--accent-primary), rgba(0,255,135,0.2))'
                                                 : 'var(--glass-highlight)',
-                                            borderRadius: '4px 4px 0 0',
-                                            minHeight: '4px'
+                                            borderRadius: '6px 6px 0 0',
+                                            minHeight: '4px',
+                                            boxShadow: isToday ? '0 0 20px var(--accent-primary-glow)' : 'none'
                                         }}
                                     />
                                     <span style={{
                                         fontSize: 'var(--font-size-xs)',
                                         color: isToday ? 'var(--accent-primary)' : 'var(--text-tertiary)',
-                                        marginTop: '8px',
-                                        fontWeight: isToday ? 600 : 400
+                                        marginTop: '10px',
+                                        fontWeight: isToday ? 600 : 400,
+                                        fontFamily: 'var(--font-heading)'
                                     }}>
                                         {dayName}
                                     </span>
@@ -259,7 +268,8 @@ export default function Progress() {
                     style={{
                         position: 'fixed',
                         inset: 0,
-                        background: 'rgba(0,0,0,0.8)',
+                        background: 'rgba(0,0,0,0.85)',
+                        backdropFilter: 'blur(8px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -291,7 +301,7 @@ export default function Progress() {
                                 min={30}
                                 max={300}
                                 step={0.1}
-                                style={{ fontSize: 'var(--font-size-xl)', textAlign: 'center' }}
+                                style={{ fontSize: 'var(--font-size-2xl)', textAlign: 'center', fontFamily: 'var(--font-heading)' }}
                             />
                         </div>
 

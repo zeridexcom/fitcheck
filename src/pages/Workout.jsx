@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Dumbbell, Clock, Flame, X, Check } from 'lucide-react';
+import { Plus, Dumbbell, Clock, Flame, X, Check, Zap, Heart, Activity } from 'lucide-react';
 import useStore from '../stores/useStore';
 
 const exerciseCategories = [
     {
         name: 'Cardio',
-        emoji: '🏃',
+        icon: Activity,
+        color: 'var(--accent-warning)',
         exercises: [
             { name: 'Running', caloriesPerMin: 10 },
             { name: 'Walking', caloriesPerMin: 4 },
@@ -17,7 +18,8 @@ const exerciseCategories = [
     },
     {
         name: 'Strength',
-        emoji: '💪',
+        icon: Dumbbell,
+        color: 'var(--accent-primary)',
         exercises: [
             { name: 'Push-ups', caloriesPerMin: 7 },
             { name: 'Squats', caloriesPerMin: 8 },
@@ -29,7 +31,8 @@ const exerciseCategories = [
     },
     {
         name: 'Flexibility',
-        emoji: '🧘',
+        icon: Heart,
+        color: 'var(--accent-pink)',
         exercises: [
             { name: 'Yoga', caloriesPerMin: 3 },
             { name: 'Stretching', caloriesPerMin: 2 },
@@ -95,18 +98,15 @@ export default function Workout() {
             >
                 <div className="flex justify-between items-center">
                     <div>
-                        <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+                        <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)', marginBottom: '4px' }}>
                             Today's Activity
                         </p>
-                        <h3 style={{ color: 'var(--accent-primary)' }}>
+                        <h3 className="text-gradient">
                             {totalCaloriesBurned} kcal burned
                         </h3>
                     </div>
-                    <div className="flex items-center gap-sm">
-                        <Dumbbell size={20} style={{ color: 'var(--text-tertiary)' }} />
-                        <span style={{ fontSize: 'var(--font-size-lg)', fontWeight: 600 }}>
-                            {todaysWorkouts.length}
-                        </span>
+                    <div className="icon-badge icon-badge-primary" style={{ width: 52, height: 52 }}>
+                        <Zap size={24} />
                     </div>
                 </div>
             </motion.div>
@@ -119,32 +119,45 @@ export default function Workout() {
             >
                 <h4 className="mb-md">Quick Add</h4>
                 <div className="flex gap-md mb-lg" style={{ overflowX: 'auto', paddingBottom: '8px' }}>
-                    {exerciseCategories.map((cat) => (
-                        <motion.button
-                            key={cat.name}
-                            className="glass-card"
-                            onClick={() => {
-                                setSelectedCategory(cat);
-                                setShowModal(true);
-                            }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            style={{
-                                padding: '16px 24px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '8px',
-                                minWidth: '100px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            <span style={{ fontSize: '28px' }}>{cat.emoji}</span>
-                            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 500 }}>
-                                {cat.name}
-                            </span>
-                        </motion.button>
-                    ))}
+                    {exerciseCategories.map((cat) => {
+                        const Icon = cat.icon;
+                        return (
+                            <motion.button
+                                key={cat.name}
+                                className="glass-card"
+                                onClick={() => {
+                                    setSelectedCategory(cat);
+                                    setShowModal(true);
+                                }}
+                                whileHover={{ scale: 1.05, y: -4 }}
+                                whileTap={{ scale: 0.95 }}
+                                style={{
+                                    padding: '20px 28px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '12px',
+                                    minWidth: '110px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <div
+                                    className="icon-badge"
+                                    style={{
+                                        background: `linear-gradient(135deg, ${cat.color}20, transparent)`,
+                                        color: cat.color,
+                                        width: 44,
+                                        height: 44
+                                    }}
+                                >
+                                    <Icon size={22} />
+                                </div>
+                                <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
+                                    {cat.name}
+                                </span>
+                            </motion.button>
+                        );
+                    })}
                 </div>
             </motion.div>
 
@@ -168,26 +181,22 @@ export default function Workout() {
                                 style={{ padding: '16px' }}
                             >
                                 <div className="flex justify-between items-center">
-                                    <div>
-                                        <h4 style={{ marginBottom: '4px' }}>{workout.exercise}</h4>
-                                        <div className="flex gap-md" style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
-                                            <span className="flex items-center gap-sm">
-                                                <Clock size={14} /> {workout.duration} min
-                                            </span>
-                                            <span className="flex items-center gap-sm">
-                                                <Flame size={14} /> {workout.caloriesBurned} kcal
-                                            </span>
+                                    <div className="flex items-center gap-md">
+                                        <div className="icon-badge icon-badge-primary" style={{ width: 44, height: 44 }}>
+                                            <Dumbbell size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 style={{ marginBottom: '4px', fontSize: 'var(--font-size-md)' }}>{workout.exercise}</h4>
+                                            <div className="flex gap-md" style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+                                                <span className="flex items-center gap-sm">
+                                                    <Clock size={14} /> {workout.duration} min
+                                                </span>
+                                                <span className="flex items-center gap-sm" style={{ color: 'var(--accent-primary)' }}>
+                                                    <Flame size={14} /> {workout.caloriesBurned} kcal
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <span style={{
-                                        background: 'var(--glass-bg)',
-                                        padding: '4px 12px',
-                                        borderRadius: 'var(--radius-full)',
-                                        fontSize: 'var(--font-size-xs)',
-                                        color: 'var(--text-tertiary)'
-                                    }}>
-                                        {workout.category}
-                                    </span>
                                 </div>
                             </motion.div>
                         ))
@@ -196,14 +205,16 @@ export default function Workout() {
                             className="glass-card text-center"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            style={{ padding: '32px' }}
+                            style={{ padding: '40px 24px' }}
                         >
-                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏋️</div>
+                            <div className="icon-badge icon-badge-primary" style={{ margin: '0 auto 16px', width: 64, height: 64 }}>
+                                <Dumbbell size={28} />
+                            </div>
                             <p style={{ color: 'var(--text-secondary)' }}>
                                 No workouts logged today
                             </p>
                             <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)', marginTop: '4px' }}>
-                                Tap a category above to add your first workout!
+                                Tap a category above to get started
                             </p>
                         </motion.div>
                     )}
@@ -217,10 +228,10 @@ export default function Workout() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', delay: 0.4 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.95 }}
             >
-                <Plus size={28} />
+                <Plus size={28} strokeWidth={2.5} />
             </motion.button>
 
             {/* Modal */}
@@ -233,7 +244,8 @@ export default function Workout() {
                         style={{
                             position: 'fixed',
                             inset: 0,
-                            background: 'rgba(0,0,0,0.8)',
+                            background: 'rgba(0,0,0,0.85)',
+                            backdropFilter: 'blur(8px)',
                             display: 'flex',
                             alignItems: 'flex-end',
                             justifyContent: 'center',
@@ -270,25 +282,36 @@ export default function Workout() {
 
                             {!selectedCategory ? (
                                 <div className="flex flex-col gap-md">
-                                    {exerciseCategories.map((cat) => (
-                                        <motion.button
-                                            key={cat.name}
-                                            className="glass-card"
-                                            onClick={() => setSelectedCategory(cat)}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            style={{
-                                                padding: '16px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '16px',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            <span style={{ fontSize: '32px' }}>{cat.emoji}</span>
-                                            <span style={{ fontWeight: 500 }}>{cat.name}</span>
-                                        </motion.button>
-                                    ))}
+                                    {exerciseCategories.map((cat) => {
+                                        const Icon = cat.icon;
+                                        return (
+                                            <motion.button
+                                                key={cat.name}
+                                                className="glass-card"
+                                                onClick={() => setSelectedCategory(cat)}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                style={{
+                                                    padding: '16px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '16px',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <div
+                                                    className="icon-badge"
+                                                    style={{
+                                                        background: `linear-gradient(135deg, ${cat.color}20, transparent)`,
+                                                        color: cat.color
+                                                    }}
+                                                >
+                                                    <Icon size={22} />
+                                                </div>
+                                                <span style={{ fontWeight: 600, fontFamily: 'var(--font-heading)' }}>{cat.name}</span>
+                                            </motion.button>
+                                        );
+                                    })}
                                 </div>
                             ) : !selectedExercise ? (
                                 <div className="flex flex-col gap-md">
@@ -350,14 +373,15 @@ export default function Workout() {
                                             onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
                                             min={1}
                                             max={300}
+                                            style={{ textAlign: 'center', fontSize: 'var(--font-size-xl)' }}
                                         />
                                     </div>
 
-                                    <div className="glass-card text-center" style={{ padding: '16px' }}>
-                                        <p style={{ color: 'var(--text-tertiary)', marginBottom: '4px' }}>
+                                    <div className="glass-card text-center" style={{ padding: '20px' }}>
+                                        <p style={{ color: 'var(--text-tertiary)', marginBottom: '8px', fontSize: 'var(--font-size-sm)' }}>
                                             Estimated calories burned
                                         </p>
-                                        <h2 style={{ color: 'var(--accent-primary)' }}>
+                                        <h2 className="text-gradient">
                                             {Math.round(selectedExercise.caloriesPerMin * duration)} kcal
                                         </h2>
                                     </div>

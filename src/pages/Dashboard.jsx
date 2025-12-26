@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Camera, Flame } from 'lucide-react';
+import { Plus, Camera, Flame, Zap, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useStore from '../stores/useStore';
 import ProgressRing from '../components/ProgressRing';
@@ -31,8 +31,13 @@ export default function Dashboard() {
                 animate={{ opacity: 1, y: 0 }}
             >
                 <div>
-                    <p style={{ color: 'var(--text-tertiary)', marginBottom: '4px' }}>{greeting}</p>
-                    <h2>{profile.name || 'Champion'} 💪</h2>
+                    <p style={{ color: 'var(--text-tertiary)', marginBottom: '4px', fontSize: 'var(--font-size-sm)' }}>
+                        {greeting}
+                    </p>
+                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {profile.name || 'Champion'}
+                        <Zap size={24} style={{ color: 'var(--accent-primary)' }} />
+                    </h2>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
@@ -48,17 +53,17 @@ export default function Dashboard() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
             >
-                <div className="flex items-center justify-center" style={{ padding: '16px 0' }}>
+                <div className="flex items-center justify-center" style={{ padding: '20px 0' }}>
                     <ProgressRing
                         progress={caloriePercent}
-                        size={160}
-                        strokeWidth={12}
+                        size={170}
+                        strokeWidth={14}
                         color="var(--accent-primary)"
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                            <Flame size={18} style={{ color: 'var(--accent-primary)' }} />
+                        <div className="icon-badge icon-badge-primary" style={{ marginBottom: '4px', width: 36, height: 36 }}>
+                            <Flame size={18} />
                         </div>
-                        <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700 }}>
+                        <div style={{ fontSize: 'var(--font-size-2xl)', fontWeight: 700, fontFamily: 'var(--font-heading)' }}>
                             {totals.calories}
                         </div>
                         <div style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-tertiary)' }}>
@@ -72,11 +77,11 @@ export default function Dashboard() {
                     <div className="macro-ring-item">
                         <ProgressRing
                             progress={proteinPercent}
-                            size={60}
+                            size={64}
                             strokeWidth={5}
                             color="var(--accent-orange)"
                         >
-                            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>
+                            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
                                 {totals.protein}g
                             </span>
                         </ProgressRing>
@@ -86,11 +91,11 @@ export default function Dashboard() {
                     <div className="macro-ring-item">
                         <ProgressRing
                             progress={carbsPercent}
-                            size={60}
+                            size={64}
                             strokeWidth={5}
                             color="var(--accent-secondary)"
                         >
-                            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>
+                            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
                                 {totals.carbs}g
                             </span>
                         </ProgressRing>
@@ -100,11 +105,11 @@ export default function Dashboard() {
                     <div className="macro-ring-item">
                         <ProgressRing
                             progress={fatPercent}
-                            size={60}
+                            size={64}
                             strokeWidth={5}
                             color="var(--accent-purple)"
                         >
-                            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600 }}>
+                            <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
                                 {totals.fat}g
                             </span>
                         </ProgressRing>
@@ -126,7 +131,7 @@ export default function Dashboard() {
                         onClick={() => navigate('/scanner')}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        style={{ padding: '8px 16px', fontSize: 'var(--font-size-sm)' }}
+                        style={{ padding: '10px 16px', fontSize: 'var(--font-size-sm)' }}
                     >
                         <Camera size={16} />
                         Scan Food
@@ -147,14 +152,16 @@ export default function Dashboard() {
                             className="glass-card text-center"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
-                            style={{ padding: '32px' }}
+                            style={{ padding: '40px 24px' }}
                         >
-                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🍽️</div>
-                            <p style={{ color: 'var(--text-secondary)' }}>
+                            <div className="icon-badge icon-badge-primary" style={{ margin: '0 auto 16px', width: 64, height: 64 }}>
+                                <Camera size={28} />
+                            </div>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '4px' }}>
                                 No meals logged today
                             </p>
-                            <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)', marginTop: '4px' }}>
-                                Tap the + button to scan your first meal!
+                            <p style={{ color: 'var(--text-tertiary)', fontSize: 'var(--font-size-sm)' }}>
+                                Tap the + button to scan your first meal
                             </p>
                         </motion.div>
                     )}
@@ -168,10 +175,10 @@ export default function Dashboard() {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', delay: 0.4 }}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.1, rotate: 90 }}
+                whileTap={{ scale: 0.95 }}
             >
-                <Plus size={28} />
+                <Plus size={28} strokeWidth={2.5} />
             </motion.button>
         </div>
     );

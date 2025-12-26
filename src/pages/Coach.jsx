@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, Utensils, Dumbbell, Lightbulb, Trash2 } from 'lucide-react';
+import { Send, Sparkles, UtensilsCrossed, Dumbbell, Lightbulb, Trash2, Bot } from 'lucide-react';
 import useStore from '../stores/useStore';
-import { chatWithCoach, generateDietPlan, generateWorkoutPlan } from '../services/openai';
+import { chatWithCoach } from '../services/openai';
 
 const quickPrompts = [
-    { icon: Utensils, label: 'Diet Plan', prompt: 'Create me a diet plan for today' },
-    { icon: Dumbbell, label: 'Workout', prompt: 'Give me a workout routine for today' },
-    { icon: Lightbulb, label: 'Tips', prompt: 'Give me 5 quick health tips' },
+    { icon: UtensilsCrossed, label: 'Diet Plan', prompt: 'Create me a diet plan for today', color: 'var(--accent-primary)' },
+    { icon: Dumbbell, label: 'Workout', prompt: 'Give me a workout routine for today', color: 'var(--accent-secondary)' },
+    { icon: Lightbulb, label: 'Tips', prompt: 'Give me 5 quick health tips', color: 'var(--accent-orange)' },
 ];
 
 export default function Coach() {
@@ -28,7 +28,7 @@ export default function Coach() {
     const sendMessage = async (message) => {
         if (!message.trim() || loading) return;
         if (!apiKey) {
-            addChatMessage('assistant', "I need an OpenAI API key to help you. Please add your key in Settings! 🔑");
+            addChatMessage('assistant', "I need an OpenAI API key to help you. Please check your settings.");
             return;
         }
 
@@ -45,7 +45,7 @@ export default function Coach() {
             );
             addChatMessage('assistant', response);
         } catch (err) {
-            addChatMessage('assistant', `Sorry, I encountered an error: ${err.message}. Please try again! 🙏`);
+            addChatMessage('assistant', `Sorry, I encountered an error: ${err.message}. Please try again!`);
         } finally {
             setLoading(false);
         }
@@ -61,23 +61,24 @@ export default function Coach() {
     };
 
     return (
-        <div className="screen" style={{ padding: 0, paddingBottom: 80 }}>
+        <div className="screen" style={{ padding: 0, paddingBottom: 90 }}>
             {/* Header */}
             <motion.div
                 className="screen-header"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                style={{ padding: 'var(--spacing-lg)' }}
+                style={{ padding: 'var(--spacing-lg)', paddingBottom: 0 }}
             >
                 <div className="flex items-center gap-md">
                     <motion.div
+                        className="icon-badge icon-badge-primary"
                         animate={{
-                            scale: [1, 1.1, 1],
-                            rotate: [0, 5, -5, 0]
+                            boxShadow: ['0 0 20px var(--accent-primary-glow)', '0 0 40px var(--accent-primary-glow)', '0 0 20px var(--accent-primary-glow)']
                         }}
-                        transition={{ repeat: Infinity, duration: 3 }}
+                        transition={{ repeat: Infinity, duration: 2 }}
+                        style={{ width: 48, height: 48 }}
                     >
-                        <Sparkles size={24} style={{ color: 'var(--accent-primary)' }} />
+                        <Sparkles size={22} />
                     </motion.div>
                     <div>
                         <h3 className="screen-title" style={{ marginBottom: '2px' }}>AI Coach</h3>
@@ -91,7 +92,7 @@ export default function Coach() {
                     <motion.button
                         className="btn btn-ghost btn-icon"
                         onClick={clearChat}
-                        whileHover={{ scale: 1.1 }}
+                        whileHover={{ scale: 1.1, color: 'var(--accent-warning)' }}
                         whileTap={{ scale: 0.9 }}
                         title="Clear chat"
                     >
@@ -110,7 +111,12 @@ export default function Coach() {
                             animate={{ opacity: 1 }}
                             style={{ padding: 'var(--spacing-xl)', textAlign: 'center' }}
                         >
-                            <div style={{ fontSize: '64px', marginBottom: 'var(--spacing-lg)' }}>🤖</div>
+                            <div
+                                className="icon-badge icon-badge-primary"
+                                style={{ width: 80, height: 80, marginBottom: 'var(--spacing-lg)' }}
+                            >
+                                <Bot size={36} />
+                            </div>
                             <h4 style={{ marginBottom: 'var(--spacing-sm)' }}>Hey {profile.name || 'there'}!</h4>
                             <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--spacing-xl)' }}>
                                 I'm your AI fitness coach. Ask me anything about diet, workouts, or health!
@@ -118,15 +124,26 @@ export default function Coach() {
 
                             {/* Quick Prompts */}
                             <div className="flex flex-col gap-sm w-full" style={{ maxWidth: '300px' }}>
-                                {quickPrompts.map(({ icon: Icon, label, prompt }) => (
+                                {quickPrompts.map(({ icon: Icon, label, prompt, color }) => (
                                     <motion.button
                                         key={label}
                                         className="btn btn-secondary"
                                         onClick={() => handleQuickPrompt(prompt)}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
+                                        style={{ justifyContent: 'flex-start', padding: '14px 18px' }}
                                     >
-                                        <Icon size={18} />
+                                        <div
+                                            className="icon-badge"
+                                            style={{
+                                                width: 32,
+                                                height: 32,
+                                                background: `linear-gradient(135deg, ${color}20, transparent)`,
+                                                color
+                                            }}
+                                        >
+                                            <Icon size={16} />
+                                        </div>
                                         {label}
                                     </motion.button>
                                 ))}
@@ -153,11 +170,13 @@ export default function Coach() {
                                     className="chat-message assistant"
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
+                                    style={{ display: 'flex', gap: '8px', padding: '18px' }}
                                 >
-                                    <div className="flex items-center gap-sm">
+                                    {[0, 1, 2].map((i) => (
                                         <motion.div
-                                            animate={{ scale: [1, 1.2, 1] }}
-                                            transition={{ repeat: Infinity, duration: 0.6 }}
+                                            key={i}
+                                            animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+                                            transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.15 }}
                                             style={{
                                                 width: 8,
                                                 height: 8,
@@ -165,27 +184,7 @@ export default function Coach() {
                                                 background: 'var(--accent-primary)'
                                             }}
                                         />
-                                        <motion.div
-                                            animate={{ scale: [1, 1.2, 1] }}
-                                            transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
-                                            style={{
-                                                width: 8,
-                                                height: 8,
-                                                borderRadius: '50%',
-                                                background: 'var(--accent-primary)'
-                                            }}
-                                        />
-                                        <motion.div
-                                            animate={{ scale: [1, 1.2, 1] }}
-                                            transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
-                                            style={{
-                                                width: 8,
-                                                height: 8,
-                                                borderRadius: '50%',
-                                                background: 'var(--accent-primary)'
-                                            }}
-                                        />
-                                    </div>
+                                    ))}
                                 </motion.div>
                             )}
 
