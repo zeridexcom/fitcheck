@@ -5,8 +5,7 @@ import useStore from './stores/useStore';
 import Link from 'react-router-dom';
 import BottomNav from './components/BottomNav';
 import ParticleBackground from './components/ParticleBackground';
-import FitBuddyAgent from './components/FitBuddyAgent';
-import fitBuddy from './services/fitbuddy';
+import EvoAgent from './components/EvoAgent';
 
 // Onboarding Pages
 import Welcome from './pages/Onboarding/Welcome';
@@ -53,10 +52,6 @@ function AppContent() {
     }
   }, []);
 
-  const handleManualVoiceTrigger = () => {
-    fitBuddy.wakeUp();
-  };
-
   if (!hasOnboarded) {
     return (
       <>
@@ -79,7 +74,7 @@ function AppContent() {
       <ParticleBackground />
       <AnimatePresence mode="wait">
         <Routes>
-          <Route path="/" element={<Dashboard onVoiceClick={handleManualVoiceTrigger} />} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/scanner" element={<Scanner />} />
           <Route path="/water" element={<Water />} />
           <Route path="/workout" element={<Workout />} />
@@ -97,7 +92,7 @@ function AppContent() {
         </Routes>
       </AnimatePresence>
       <BottomNav />
-      <FitBuddyAgent alwaysListening={true} />
+      <EvoAgent />
     </>
   );
 }

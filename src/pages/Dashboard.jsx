@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer, MessageCircle, Pill, Utensils, Moon, ImagePlus, BookOpen } from 'lucide-react';
+import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Timer, MessageCircle, Pill, Utensils, Moon, ImagePlus, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import useStore from '../stores/useStore';
@@ -11,7 +11,7 @@ import TodayWorkout from '../components/TodayWorkout';
 import MacroAlerts from '../components/MacroAlerts';
 import DailyVerse from '../components/DailyVerse';
 
-export default function Dashboard({ onVoiceClick }) {
+export default function Dashboard() {
     const navigate = useNavigate();
     const {
         profile, targets, getTodaysMeals, getTodaysTotals, deleteMeal,
@@ -328,19 +328,6 @@ export default function Dashboard({ onVoiceClick }) {
                         <Timer size={16} />
                     </div>
                     <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Fast</span>
-                </motion.button>
-
-                <motion.button
-                    className="glass-card"
-                    onClick={onVoiceClick}
-                    whileHover={{ scale: 1.03, y: -4 }}
-                    whileTap={{ scale: 0.97 }}
-                    style={{ padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
-                >
-                    <div className="icon-badge icon-badge-purple" style={{ width: 36, height: 36 }}>
-                        <Mic size={16} />
-                    </div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Voice</span>
                 </motion.button>
 
                 <motion.button
