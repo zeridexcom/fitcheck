@@ -294,18 +294,22 @@ export default function Dashboard({ onVoiceClick }) {
 
             {/* Quick Actions */}
             <motion.div
-                className="flex gap-sm mb-lg"
+                className="mb-lg"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                style={{ flexWrap: 'wrap' }}
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '8px'
+                }}
             >
                 <motion.button
                     className="glass-card"
                     onClick={() => navigate('/scanner')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                    style={{ padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
                     <div className="icon-badge icon-badge-primary" style={{ width: 36, height: 36 }}>
                         <Camera size={16} />
@@ -318,7 +322,7 @@ export default function Dashboard({ onVoiceClick }) {
                     onClick={() => navigate('/fasting')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                    style={{ padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
                     <div className="icon-badge icon-badge-orange" style={{ width: 36, height: 36 }}>
                         <Timer size={16} />
@@ -331,7 +335,7 @@ export default function Dashboard({ onVoiceClick }) {
                     onClick={onVoiceClick}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                    style={{ padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
                     <div className="icon-badge icon-badge-purple" style={{ width: 36, height: 36 }}>
                         <Mic size={16} />
@@ -344,7 +348,7 @@ export default function Dashboard({ onVoiceClick }) {
                     onClick={() => navigate('/coach')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                    style={{ padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
                     <div className="icon-badge icon-badge-secondary" style={{ width: 36, height: 36 }}>
                         <Sparkles size={16} />
@@ -357,7 +361,7 @@ export default function Dashboard({ onVoiceClick }) {
                     onClick={() => navigate('/supplements')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                    style={{ padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
                     <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(236, 72, 153, 0.15)', color: '#EC4899' }}>
                         <Pill size={16} />
@@ -370,7 +374,7 @@ export default function Dashboard({ onVoiceClick }) {
                     onClick={() => navigate('/meal-planner')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                    style={{ padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
                     <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(255, 159, 67, 0.15)', color: '#FF9F43' }}>
                         <Utensils size={16} />
@@ -383,7 +387,7 @@ export default function Dashboard({ onVoiceClick }) {
                     onClick={() => navigate('/sleep')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                    style={{ padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
                     <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(99, 102, 241, 0.15)', color: '#6366F1' }}>
                         <Moon size={16} />
@@ -396,7 +400,7 @@ export default function Dashboard({ onVoiceClick }) {
                     onClick={() => navigate('/gallery')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                    style={{ padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
                     <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(168, 85, 247, 0.15)', color: '#A855F7' }}>
                         <ImagePlus size={16} />
@@ -409,7 +413,7 @@ export default function Dashboard({ onVoiceClick }) {
                     onClick={() => navigate('/prayer')}
                     whileHover={{ scale: 1.03, y: -4 }}
                     whileTap={{ scale: 0.97 }}
-                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                    style={{ padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
                 >
                     <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(255, 215, 0, 0.15)', color: '#FFD700' }}>
                         <BookOpen size={16} />
