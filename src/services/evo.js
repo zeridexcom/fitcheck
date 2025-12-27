@@ -1,6 +1,7 @@
 // Evo - Conversational AI Voice Assistant
-// Wake word: "Evo" or "Hey Evo"
-// Full app control with conversational responses
+// Wake word: "Evo"
+// ALWAYS-ON mic - no restart, no click sounds
+// Only responds to "Evo" wake word - ignores all other speech
 
 class EvoService {
     constructor() {
@@ -9,26 +10,24 @@ class EvoService {
         this.isListening = false;
         this.isAwake = false;
         this.isSpeaking = false;
-        this.wakeWords = ['evo', 'hey evo', 'hey ivo', 'ivo', 'evil', 'eva'];
         this.awakeTimeout = null;
-        this.restartTimeout = null;
-        this.conversationMode = false;
-        this.lastProcessedText = '';
-        this.lastProcessedTime = 0;
 
         // Callbacks
         this.onWakeUp = null;
         this.onCommand = null;
-        this.onTranscript = null;
         this.onStatusChange = null;
         this.onResponse = null;
 
-        // App state reference (will be set by component)
+        // App state reference
         this.appState = null;
         this.appActions = null;
         this.navigate = null;
 
-        // Load voices
+        // Command buffer - only stores when awake
+        this.commandBuffer = '';
+        this.lastCommandTime = 0;
+
+        // Load voices early
         if (this.synthesis) {
             this.synthesis.getVoices();
             if (speechSynthesis.onvoiceschanged !== undefined) {
@@ -53,98 +52,75 @@ class EvoService {
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
+
+        // CRITICAL: These settings minimize restarts
         this.recognition.continuous = true;
-        this.recognition.interimResults = true;
+        this.recognition.interimResults = false; // Only final results - fewer events, less restarts
         this.recognition.lang = 'en-US';
         this.recognition.maxAlternatives = 1;
 
         this.recognition.onresult = (event) => {
-            // Don't process while speaking
-            if (this.isSpeaking) return;
+            // Get only the latest final result
+            const lastResult = event.results[event.results.length - 1];
+            if (!lastResult.isFinal) return;
 
-            let finalTranscript = '';
-            let interimTranscript = '';
+            const transcript = lastResult[0].transcript.toLowerCase().trim();
 
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const transcript = event.results[i][0].transcript.toLowerCase().trim();
-                if (event.results[i].isFinal) {
-                    finalTranscript += transcript;
-                } else {
-                    interimTranscript += transcript;
-                }
-            }
-
-            const allText = (interimTranscript + ' ' + finalTranscript).toLowerCase();
-
+            // PRIVACY: Only process if contains wake word "evo"
+            // Everything else is IGNORED and NOT stored
             if (!this.isAwake) {
                 // Check for wake word
-                for (const wake of this.wakeWords) {
-                    if (allText.includes(wake)) {
-                        this.wakeUp();
-                        const commandAfterWake = allText.split(wake).pop()?.trim();
-                        if (commandAfterWake && commandAfterWake.length > 3) {
-                            setTimeout(() => this.processCommand(commandAfterWake), 500);
-                        }
-                        return;
+                if (transcript.includes('evo') || transcript.includes('ivo') || transcript.includes('evil') || transcript.includes('eva')) {
+                    this.wakeUp();
+
+                    // Check if command came with wake word
+                    const parts = transcript.split(/evo|ivo|evil|eva/i);
+                    const command = parts[parts.length - 1]?.trim();
+                    if (command && command.length > 2) {
+                        setTimeout(() => this.processCommand(command), 800);
                     }
                 }
-                if (this.onTranscript) {
-                    this.onTranscript(interimTranscript || finalTranscript, false);
-                }
-            } else {
-                // Already awake, process as command
-                const now = Date.now();
-                if (finalTranscript &&
-                    finalTranscript !== this.lastProcessedText &&
-                    finalTranscript.length > 2 &&
-                    now - this.lastProcessedTime > 1000) {
-                    this.lastProcessedText = finalTranscript;
-                    this.lastProcessedTime = now;
-                    this.processCommand(finalTranscript);
-                }
-                if (this.onTranscript) {
-                    this.onTranscript(interimTranscript || finalTranscript, true);
-                }
+                // If no wake word, DO NOTHING - complete privacy
+                return;
+            }
+
+            // Awake - process the command
+            const now = Date.now();
+            if (now - this.lastCommandTime > 1500 && transcript.length > 2) {
+                this.lastCommandTime = now;
+                this.processCommand(transcript);
             }
         };
 
         this.recognition.onend = () => {
-            // Don't restart if speaking or not listening
-            if (!this.isListening || this.isSpeaking) return;
-
-            // Clear any pending restart
-            if (this.restartTimeout) {
-                clearTimeout(this.restartTimeout);
-            }
-
-            // Wait longer before restarting to avoid rapid on/off
-            this.restartTimeout = setTimeout(() => {
-                if (this.isListening && !this.isSpeaking) {
-                    try {
-                        this.recognition.start();
-                    } catch (e) {
-                        // Already started or other error - ignore
+            // Only restart if still supposed to be listening and not speaking
+            if (this.isListening && !this.isSpeaking) {
+                // Use longer delay to minimize click sounds
+                setTimeout(() => {
+                    if (this.isListening && !this.isSpeaking && this.recognition) {
+                        try {
+                            this.recognition.start();
+                        } catch (e) {
+                            // Already running or error - ignore silently
+                        }
                     }
-                }
-            }, 1000); // Wait 1 second before restart
+                }, 2000); // 2 second delay - much less intrusive
+            }
         };
 
         this.recognition.onerror = (event) => {
+            // Silently handle errors - no restarts on error
             if (event.error === 'no-speech' || event.error === 'aborted') {
-                // Normal, ignore
-                return;
+                return; // Normal, ignore
             }
-            console.error('Speech recognition error:', event.error);
         };
     }
 
     wakeUp() {
-        if (this.isAwake) return; // Already awake
+        if (this.isAwake) return;
 
         this.isAwake = true;
-        this.conversationMode = true;
-        this.lastProcessedText = '';
-        this.lastProcessedTime = Date.now();
+        this.lastCommandTime = Date.now();
 
         if (this.onWakeUp) this.onWakeUp();
         if (this.onStatusChange) this.onStatusChange('awake');
@@ -157,13 +133,12 @@ class EvoService {
         if (this.awakeTimeout) clearTimeout(this.awakeTimeout);
         this.awakeTimeout = setTimeout(() => {
             this.sleep();
-        }, 30000); // 30 seconds before sleeping
+        }, 20000); // 20 seconds of silence = sleep
     }
 
     sleep() {
         this.isAwake = false;
-        this.conversationMode = false;
-        this.lastProcessedText = '';
+        this.commandBuffer = '';
         if (this.onStatusChange) this.onStatusChange('listening');
     }
 
@@ -171,14 +146,9 @@ class EvoService {
         if (!text || text.length < 2) return;
 
         this.resetAwakeTimeout();
-
         if (this.onStatusChange) this.onStatusChange('processing');
 
-        const result = await this.parseAndExecute(text);
-
-        if (this.onCommand) {
-            this.onCommand({ text, result });
-        }
+        await this.parseAndExecute(text);
 
         if (this.onStatusChange) this.onStatusChange('awake');
     }
@@ -186,84 +156,61 @@ class EvoService {
     async parseAndExecute(text) {
         const lower = text.toLowerCase().trim();
 
-        // === PROFILE COMMANDS ===
+        // === PROFILE ===
         if (lower.includes('change') && lower.includes('name')) {
-            const nameMatch = text.match(/(?:to|as)\s+(\w+)/i);
-            if (nameMatch && this.appActions?.updateProfile) {
-                const newName = nameMatch[1];
-                this.appActions.updateProfile({ name: newName });
-                return this.respond(`Done! Changed your name to ${newName}. What's next?`);
+            const match = text.match(/(?:to|as)\s+(\w+)/i);
+            if (match && this.appActions?.updateProfile) {
+                this.appActions.updateProfile({ name: match[1] });
+                return this.respond(`Changed name to ${match[1]}. What's next?`);
             }
         }
 
-        if ((lower.includes('set') || lower.includes('change')) && lower.includes('weight')) {
-            const weightMatch = lower.match(/(\d+\.?\d*)\s*(kg|pounds?|lbs?)?/);
-            if (weightMatch && this.appActions?.updateProfile) {
-                let weight = parseFloat(weightMatch[1]);
-                if (weightMatch[2]?.startsWith('lb') || weightMatch[2]?.startsWith('pound')) {
-                    weight = weight * 0.453592;
-                }
-                this.appActions.updateProfile({ weight });
-                return this.respond(`Your weight is now ${weight.toFixed(1)} kg. What else?`);
+        if (lower.includes('weight') && lower.match(/\d+/)) {
+            const match = lower.match(/(\d+)/);
+            if (match && this.appActions?.updateProfile) {
+                this.appActions.updateProfile({ weight: parseInt(match[1]) });
+                return this.respond(`Weight set to ${match[1]} kg. What else?`);
             }
         }
 
-        if (lower.includes('theme') || lower.includes('color')) {
-            const themes = { blue: 'blue', ocean: 'blue', purple: 'purple', cosmos: 'purple', green: 'default', gold: 'orange', sunrise: 'orange', pink: 'pink' };
-            for (const [keyword, theme] of Object.entries(themes)) {
-                if (lower.includes(keyword)) {
-                    localStorage.setItem('fitcheck-theme', theme);
-                    document.documentElement.style.setProperty('--accent-primary', theme === 'blue' ? '#00D4FF' : theme === 'purple' ? '#A855F7' : theme === 'orange' ? '#FF9F43' : theme === 'pink' ? '#FF6B9D' : '#00FF87');
-                    return this.respond(`Theme changed! What's next?`);
-                }
-            }
-        }
-
-        // === CALORIE COMMANDS ===
+        // === CALORIES ===
         if (lower.includes('add') && lower.includes('calorie')) {
-            const calMatch = lower.match(/(\d+)\s*calorie/);
-            if (calMatch && this.appActions?.addMeal) {
-                const calories = parseInt(calMatch[1]);
-                this.appActions.addMeal({ name: 'Quick add', calories, protein: 0, carbs: 0, fat: 0 });
-                return this.respond(`Added ${calories} calories. What's next?`);
+            const match = lower.match(/(\d+)/);
+            if (match && this.appActions?.addMeal) {
+                const cal = parseInt(match[1]);
+                this.appActions.addMeal({ name: 'Quick add', calories: cal, protein: 0, carbs: 0, fat: 0 });
+                return this.respond(`Added ${cal} calories. What's next?`);
             }
         }
 
-        if ((lower.includes('remove') || lower.includes('subtract')) && lower.includes('calorie')) {
-            const calMatch = lower.match(/(\d+)\s*calorie/);
-            if (calMatch && this.appActions?.addMeal) {
-                const calories = -parseInt(calMatch[1]);
-                this.appActions.addMeal({ name: 'Adjustment', calories, protein: 0, carbs: 0, fat: 0 });
-                return this.respond(`Removed ${Math.abs(calories)} calories. What else?`);
+        if (lower.includes('remove') && lower.includes('calorie')) {
+            const match = lower.match(/(\d+)/);
+            if (match && this.appActions?.addMeal) {
+                this.appActions.addMeal({ name: 'Removed', calories: -parseInt(match[1]), protein: 0, carbs: 0, fat: 0 });
+                return this.respond(`Removed calories. What else?`);
             }
         }
 
-        // === WATER COMMANDS ===
-        if (lower.includes('water') || lower.includes('drank') || lower.includes('drink')) {
-            if (!lower.includes('how') && !lower.includes('what')) {
-                const mlMatch = lower.match(/(\d+)\s*(ml|milliliter)/i);
-                const glassMatch = lower.match(/(\d+)?\s*(glass|glasses)/i);
-                const literMatch = lower.match(/(\d+\.?\d*)?\s*(liter|litre|l\b)/i);
+        // === WATER ===
+        if ((lower.includes('water') || lower.includes('drank')) && !lower.includes('how')) {
+            let amount = 250;
+            const mlMatch = lower.match(/(\d+)\s*ml/i);
+            const glassMatch = lower.match(/(\d+)\s*glass/i);
+            if (mlMatch) amount = parseInt(mlMatch[1]);
+            else if (glassMatch) amount = parseInt(glassMatch[1]) * 250;
 
-                let amount = 250;
-                if (mlMatch) amount = parseInt(mlMatch[1]);
-                else if (literMatch) amount = parseFloat(literMatch[1] || 1) * 1000;
-                else if (glassMatch) amount = parseInt(glassMatch[1] || 1) * 250;
-
-                if (this.appActions?.addWater) {
-                    this.appActions.addWater(amount);
-                    return this.respond(`Added ${amount} ml water. What's next?`);
-                }
+            if (this.appActions?.addWater) {
+                this.appActions.addWater(amount);
+                return this.respond(`Added ${amount}ml water. What's next?`);
             }
         }
 
-        // === SUPPLEMENT COMMANDS ===
-        if (lower.includes('creatine') || lower.includes('protein shake') || lower.includes('vitamin') || lower.includes('took my')) {
+        // === SUPPLEMENTS ===
+        if (lower.includes('creatine') || lower.includes('protein') || lower.includes('vitamin')) {
             let name = 'Supplement', amount = 1, unit = 'serving';
-
             if (lower.includes('creatine')) { name = 'Creatine'; amount = 5; unit = 'g'; }
-            else if (lower.includes('protein')) { name = 'Protein Shake'; amount = 30; unit = 'g'; }
-            else if (lower.includes('vitamin')) { name = 'Multivitamin'; amount = 1; unit = 'tablet'; }
+            else if (lower.includes('protein')) { name = 'Protein'; amount = 30; unit = 'g'; }
+            else if (lower.includes('vitamin')) { name = 'Vitamin'; amount = 1; unit = 'tab'; }
 
             if (this.appActions?.logSupplement) {
                 this.appActions.logSupplement({ name, amount, unit });
@@ -271,78 +218,75 @@ class EvoService {
             }
         }
 
-        // === FASTING COMMANDS ===
+        // === FASTING ===
         if (lower.includes('start') && lower.includes('fast')) {
             if (this.appActions?.startFast) {
                 this.appActions.startFast(16, '16:8');
-                return this.respond(`Started your fast. Stay strong! What else?`);
+                return this.respond(`Started fast. What else?`);
             }
         }
-        if ((lower.includes('end') || lower.includes('stop') || lower.includes('break')) && lower.includes('fast')) {
+        if ((lower.includes('end') || lower.includes('stop')) && lower.includes('fast')) {
             if (this.appActions?.endFast) {
                 this.appActions.endFast(true);
-                return this.respond(`Fast completed! What's next?`);
+                return this.respond(`Fast ended. What's next?`);
             }
         }
 
-        // === NAVIGATION COMMANDS ===
-        const navMappings = {
+        // === NAVIGATION ===
+        const navMap = {
             'settings': '/settings', 'sleep': '/sleep', 'progress': '/progress',
             'workout': '/workout', 'water': '/water', 'fasting': '/fasting',
-            'coach': '/coach', 'scanner': '/scanner', 'prayer': '/prayer',
-            'supplements': '/supplements', 'gallery': '/gallery', 'photos': '/gallery',
-            'meals': '/meal-planner', 'home': '/', 'dashboard': '/', 'calendar': '/calendar',
+            'coach': '/coach', 'scan': '/scanner', 'prayer': '/prayer',
+            'supplement': '/supplements', 'gallery': '/gallery', 'photo': '/gallery',
+            'meal': '/meal-planner', 'home': '/', 'calendar': '/calendar',
         };
 
-        for (const [keyword, path] of Object.entries(navMappings)) {
-            if (lower.includes(keyword) && (lower.includes('open') || lower.includes('go') || lower.includes('show'))) {
+        for (const [word, path] of Object.entries(navMap)) {
+            if (lower.includes(word) && (lower.includes('open') || lower.includes('go') || lower.includes('show'))) {
                 if (this.navigate) {
                     this.navigate(path);
-                    return this.respond(`Opening ${keyword}. What else?`);
+                    return this.respond(`Opening ${word}. What else?`);
                 }
             }
         }
 
-        // === QUERY COMMANDS ===
-        if (lower.includes('calorie') && (lower.includes('how') || lower.includes('what'))) {
+        // === QUERIES ===
+        if (lower.includes('calorie') && lower.includes('how')) {
             const totals = this.appState?.getTodaysTotals?.() || { calories: 0 };
-            const target = this.appState?.targets?.calories || 2000;
-            return this.respond(`You've had ${totals.calories} calories. ${target - totals.calories} remaining. What else?`);
+            return this.respond(`${totals.calories} calories today. What else?`);
         }
 
-        if (lower.includes('water') && (lower.includes('how') || lower.includes('what'))) {
+        if (lower.includes('water') && lower.includes('how')) {
             const today = new Date().toISOString().split('T')[0];
             const water = this.appState?.waterIntake?.[today] || 0;
-            return this.respond(`You've had ${water} ml water today. What else?`);
+            return this.respond(`${water}ml today. What else?`);
         }
 
         if (lower.includes('weight') && lower.includes('my')) {
-            const weight = this.appState?.profile?.weight || 0;
-            return this.respond(`Your weight is ${weight} kg. What else?`);
+            return this.respond(`${this.appState?.profile?.weight || 0} kg. What else?`);
         }
 
-        // === WEB SEARCH ===
-        if (lower.includes('search') || lower.includes('google') || lower.includes('look up')) {
-            const query = text.replace(/search|google|look up|for|about/gi, '').trim();
-            if (query.length > 3) {
+        // === SEARCH ===
+        if (lower.includes('search') || lower.includes('google')) {
+            const query = text.replace(/search|google|for|about/gi, '').trim();
+            if (query.length > 2) {
                 window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-                return this.respond(`Searching for ${query}. What else?`);
+                return this.respond(`Searching. What else?`);
             }
         }
 
-        // === HELP ===
-        if (lower.includes('help') || lower.includes('what can you do')) {
-            return this.respond(`I can add calories, log water, track supplements, open pages, check your stats, and answer questions. Try saying: add 500 calories, or, open settings.`);
+        // === GENERAL ===
+        if (lower.includes('help')) {
+            return this.respond(`I can add calories, water, supplements, open pages, and answer questions. What do you need?`);
         }
 
         if (lower.includes('thank')) {
-            return this.respond(`You're welcome! Anything else?`);
+            return this.respond(`You're welcome!`);
         }
 
-        if (lower.includes('bye') || lower.includes('goodbye') || lower.includes("that's all")) {
-            this.conversationMode = false;
+        if (lower.includes('bye') || lower.includes('goodbye')) {
             this.sleep();
-            return this.respond(`Goodbye! Say Evo anytime.`);
+            return this.respond(`Bye! Say Evo anytime.`);
         }
 
         // === AI FALLBACK ===
@@ -351,34 +295,26 @@ class EvoService {
 
     async askAI(question) {
         if (!this.appState?.apiKey) {
-            return this.respond(`I need an API key for that. Set it in settings. What else?`);
+            return this.respond(`Need API key in settings.`);
         }
 
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            const res = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.appState.apiKey}`
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.appState.apiKey}` },
                 body: JSON.stringify({
                     model: 'gpt-4o-mini',
                     messages: [
-                        {
-                            role: 'system',
-                            content: `You are Evo, a brief fitness AI. Keep responses under 50 words. End with "What else?" or "What's next?"`
-                        },
+                        { role: 'system', content: 'You are Evo. Be very brief, under 30 words. End with "What else?"' },
                         { role: 'user', content: question }
                     ],
-                    max_tokens: 100
+                    max_tokens: 80
                 })
             });
-
-            const data = await response.json();
-            const answer = data.choices?.[0]?.message?.content || "I couldn't process that.";
-            return this.respond(answer);
+            const data = await res.json();
+            return this.respond(data.choices?.[0]?.message?.content || "Didn't catch that.");
         } catch (e) {
-            return this.respond(`Sorry, I had an error. What else can I help with?`);
+            return this.respond(`Error. What else?`);
         }
     }
 
@@ -389,17 +325,14 @@ class EvoService {
     }
 
     startListening() {
-        if (!this.recognition) {
-            console.warn('Speech recognition not available');
-            return false;
-        }
+        if (!this.recognition) return false;
+
         try {
             this.isListening = true;
             this.recognition.start();
             if (this.onStatusChange) this.onStatusChange('listening');
             return true;
         } catch (e) {
-            console.error('Failed to start recognition:', e);
             return false;
         }
     }
@@ -407,10 +340,8 @@ class EvoService {
     stopListening() {
         this.isListening = false;
         this.isAwake = false;
-        this.conversationMode = false;
         this.isSpeaking = false;
         if (this.awakeTimeout) clearTimeout(this.awakeTimeout);
-        if (this.restartTimeout) clearTimeout(this.restartTimeout);
         if (this.recognition) {
             try { this.recognition.stop(); } catch (e) { }
         }
@@ -418,53 +349,43 @@ class EvoService {
     }
 
     speak(text) {
-        if (!this.synthesis) {
-            console.log('Evo says:', text);
-            return;
-        }
+        if (!this.synthesis) return;
 
-        // Stop recognition while speaking to avoid feedback
         this.isSpeaking = true;
+        // Stop listening while speaking to avoid picking up own voice
         if (this.recognition) {
             try { this.recognition.stop(); } catch (e) { }
         }
 
         this.synthesis.cancel();
-
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = 1.0;
         utterance.pitch = 1;
         utterance.volume = 1;
 
         const voices = this.synthesis.getVoices();
-        // Prefer a good English voice
-        const preferredVoice = voices.find(v =>
-            v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Microsoft') || v.name.includes('Natural'))
-        ) || voices.find(v => v.lang.startsWith('en')) || voices[0];
-
-        if (preferredVoice) utterance.voice = preferredVoice;
+        const voice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google'))
+            || voices.find(v => v.lang.startsWith('en'))
+            || voices[0];
+        if (voice) utterance.voice = voice;
 
         utterance.onend = () => {
             this.isSpeaking = false;
             // Resume listening after speaking
-            if (this.isListening) {
-                setTimeout(() => {
-                    try {
-                        this.recognition.start();
-                    } catch (e) { }
-                }, 300);
-            }
+            setTimeout(() => {
+                if (this.isListening && this.recognition) {
+                    try { this.recognition.start(); } catch (e) { }
+                }
+            }, 500);
         };
 
         utterance.onerror = () => {
             this.isSpeaking = false;
-            if (this.isListening) {
-                setTimeout(() => {
-                    try {
-                        this.recognition.start();
-                    } catch (e) { }
-                }, 300);
-            }
+            setTimeout(() => {
+                if (this.isListening && this.recognition) {
+                    try { this.recognition.start(); } catch (e) { }
+                }
+            }, 500);
         };
 
         this.synthesis.speak(utterance);
