@@ -27,6 +27,7 @@ import Calendar from './pages/Calendar';
 import Supplements from './pages/Supplements';
 import MealPlanner from './pages/MealPlanner';
 import Sleep from './pages/Sleep';
+import ProgressGallery from './pages/ProgressGallery';
 
 import './index.css';
 
@@ -89,6 +90,7 @@ function AppContent() {
           <Route path="/supplements" element={<Supplements />} />
           <Route path="/meal-planner" element={<MealPlanner />} />
           <Route path="/sleep" element={<Sleep />} />
+          <Route path="/gallery" element={<ProgressGallery />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>

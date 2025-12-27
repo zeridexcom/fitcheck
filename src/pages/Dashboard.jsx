@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer, MessageCircle, Pill, Utensils, Moon } from 'lucide-react';
+import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer, MessageCircle, Pill, Utensils, Moon, ImagePlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import useStore from '../stores/useStore';
@@ -381,6 +381,19 @@ export default function Dashboard({ onVoiceClick }) {
                         <Moon size={16} />
                     </div>
                     <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Sleep</span>
+                </motion.button>
+
+                <motion.button
+                    className="glass-card"
+                    onClick={() => navigate('/gallery')}
+                    whileHover={{ scale: 1.03, y: -4 }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                >
+                    <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(168, 85, 247, 0.15)', color: '#A855F7' }}>
+                        <ImagePlus size={16} />
+                    </div>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Photos</span>
                 </motion.button>
             </motion.div>
 

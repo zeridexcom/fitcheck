@@ -105,6 +105,10 @@ const useStore = create(
             sleepHistory: [],  // { date, bedtime, wakeTime, duration, quality, notes }
             sleepGoal: 8,  // hours
 
+            // === PROGRESS PHOTOS ===
+            progressPhotos: [],  // { id, date, imageData, weight, notes, type: 'front'|'side'|'back' }
+            progressPhotoPrivacy: true,  // blur photos by default
+
             // === ACTIONS ===
 
             completeOnboarding: () => set({ hasOnboarded: true }),
@@ -670,6 +674,23 @@ const useStore = create(
                     goalMet: avgSleep >= sleepGoal
                 };
             },
+
+            // === PROGRESS PHOTO ACTIONS ===
+            addProgressPhoto: (photoData) => set((state) => ({
+                progressPhotos: [...state.progressPhotos, {
+                    id: Date.now().toString(),
+                    date: new Date().toISOString().split('T')[0],
+                    ...photoData
+                }]
+            })),
+
+            deleteProgressPhoto: (id) => set((state) => ({
+                progressPhotos: state.progressPhotos.filter(p => p.id !== id)
+            })),
+
+            togglePhotoPrivacy: () => set((state) => ({
+                progressPhotoPrivacy: !state.progressPhotoPrivacy
+            })),
 
             // Reset all
             resetAll: () => set({
