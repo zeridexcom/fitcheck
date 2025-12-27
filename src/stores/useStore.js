@@ -17,6 +17,7 @@ const useStore = create(
                 height: 170,
                 activityLevel: 'moderate',
                 goal: null,
+                targetWeight: null,
             },
 
             // === CALCULATED TARGETS ===
@@ -35,6 +36,16 @@ const useStore = create(
 
             // === WEIGHT HISTORY ===
             weightHistory: [],
+
+            // === BODY MEASUREMENTS ===
+            bodyMeasurements: {
+                waist: null,  // cm
+                neck: null,   // cm
+                hip: null,    // cm (for females)
+            },
+
+            // === BODY FAT HISTORY ===
+            bodyFatHistory: [],  // { date, percentage, measurements }
 
             // === CHAT HISTORY ===
             chatHistory: [],
@@ -209,8 +220,85 @@ const useStore = create(
                 weightHistory: [...state.weightHistory, {
                     date: new Date().toISOString().split('T')[0],
                     weight
-                }]
+                }],
+                profile: { ...state.profile, weight }
             })),
+
+            setTargetWeight: (targetWeight) => set((state) => ({
+                profile: { ...state.profile, targetWeight }
+            })),
+
+            logBodyMeasurements: (measurements) => {
+                set((state) => ({
+                    bodyMeasurements: { ...state.bodyMeasurements, ...measurements }
+                }));
+                // Auto-calculate body fat after logging measurements
+                get().calculateBodyFat();
+            },
+
+            calculateBodyFat: () => {
+                const { profile, bodyMeasurements } = get();
+                const { waist, neck, hip } = bodyMeasurements;
+                const { height, gender } = profile;
+
+                if (!waist || !neck || !height) return null;
+
+                let bodyFat;
+
+                if (gender === 'female') {
+                    if (!hip) return null;
+                    // US Navy formula for females
+                    bodyFat = 495 / (1.29579 - 0.35004 * Math.log10(waist + hip - neck) + 0.22100 * Math.log10(height)) - 450;
+                } else {
+                    // US Navy formula for males
+                    bodyFat = 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(height)) - 450;
+                }
+
+                bodyFat = Math.max(0, Math.min(60, Math.round(bodyFat * 10) / 10));
+
+                set((state) => ({
+                    bodyFatHistory: [...state.bodyFatHistory, {
+                        date: new Date().toISOString().split('T')[0],
+                        percentage: bodyFat,
+                        measurements: { waist, neck, hip }
+                    }]
+                }));
+
+                return bodyFat;
+            },
+
+            getWeightProjection: () => {
+                const { weightHistory, profile } = get();
+                const { targetWeight } = profile;
+
+                if (!targetWeight || weightHistory.length < 2) return null;
+
+                // Calculate average weekly weight change from last 4 weeks
+                const recentWeights = weightHistory.slice(-28);
+                if (recentWeights.length < 2) return null;
+
+                const firstWeight = recentWeights[0].weight;
+                const lastWeight = recentWeights[recentWeights.length - 1].weight;
+                const daysDiff = Math.max(1, (new Date(recentWeights[recentWeights.length - 1].date) - new Date(recentWeights[0].date)) / (1000 * 60 * 60 * 24));
+
+                const weeklyChange = ((lastWeight - firstWeight) / daysDiff) * 7;
+                const currentWeight = lastWeight;
+                const weightToLose = currentWeight - targetWeight;
+
+                if (Math.abs(weeklyChange) < 0.01) return { weeksToGoal: null, message: 'Not enough data' };
+
+                const weeksToGoal = Math.abs(weightToLose / weeklyChange);
+
+                if ((weightToLose > 0 && weeklyChange >= 0) || (weightToLose < 0 && weeklyChange <= 0)) {
+                    return { weeksToGoal: null, message: 'Adjust your diet' };
+                }
+
+                return {
+                    weeksToGoal: Math.round(weeksToGoal),
+                    weeklyChange: Math.round(weeklyChange * 100) / 100,
+                    projectedDate: new Date(Date.now() + weeksToGoal * 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                };
+            },
 
             // Chat actions
             addChatMessage: (role, content) => set((state) => ({
