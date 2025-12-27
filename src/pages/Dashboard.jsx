@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer, MessageCircle } from 'lucide-react';
+import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer, MessageCircle, Pill } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import useStore from '../stores/useStore';
@@ -342,6 +342,19 @@ export default function Dashboard({ onVoiceClick }) {
                         <Sparkles size={16} />
                     </div>
                     <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Coach</span>
+                </motion.button>
+
+                <motion.button
+                    className="glass-card"
+                    onClick={() => navigate('/supplements')}
+                    whileHover={{ scale: 1.03, y: -4 }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                >
+                    <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(236, 72, 153, 0.15)', color: '#EC4899' }}>
+                        <Pill size={16} />
+                    </div>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Supps</span>
                 </motion.button>
             </motion.div>
 
