@@ -26,6 +26,7 @@ const useStore = create(
                 protein: 150,
                 carbs: 200,
                 fat: 67,
+                sugar: 50,  // Max daily sugar in grams
             },
 
             // === MEALS LOG ===
@@ -208,6 +209,7 @@ const useStore = create(
                     protein: todaysMeals.reduce((sum, m) => sum + (m.protein || 0), 0),
                     carbs: todaysMeals.reduce((sum, m) => sum + (m.carbs || 0), 0),
                     fat: todaysMeals.reduce((sum, m) => sum + (m.fat || 0), 0),
+                    sugar: todaysMeals.reduce((sum, m) => sum + (m.sugar || 0), 0),
                 };
             },
 

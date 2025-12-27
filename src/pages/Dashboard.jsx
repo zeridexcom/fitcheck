@@ -8,6 +8,7 @@ import MealCard from '../components/MealCard';
 import Card3D from '../components/Card3D';
 import GlowButton from '../components/GlowButton';
 import TodayWorkout from '../components/TodayWorkout';
+import MacroAlerts from '../components/MacroAlerts';
 
 export default function Dashboard({ onVoiceClick }) {
     const navigate = useNavigate();
@@ -78,6 +79,9 @@ export default function Dashboard({ onVoiceClick }) {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Macro Danger Zone Alerts */}
+            <MacroAlerts />
 
             {/* Header with Streak */}
             <motion.div
