@@ -142,12 +142,13 @@ Keep responses concise but helpful.`;
 }
 
 // Simple ask function for FitBuddy
-export async function askCoach(question) {
-    // Get API key from store or env
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+export async function askCoach(apiKey, question) {
+    if (!apiKey) {
+        apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+    }
 
     if (!apiKey) {
-        throw new Error('No API key configured. Please add VITE_OPENAI_API_KEY to your .env file.');
+        throw new Error('No API key configured. Please add VITE_OPENAI_API_KEY to your .env file or enter it in settings.');
     }
 
     const config = getApiConfig(apiKey);

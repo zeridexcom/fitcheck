@@ -9,7 +9,7 @@ export default function FitBuddyAgent({ alwaysListening = false }) {
     const {
         addWater, waterIntake, waterGoal, getTodaysTotals, targets,
         logSupplement, completeExercise, todayWorkout, workoutPlan,
-        startFast, endFast
+        startFast, endFast, apiKey
     } = useStore();
 
     const [isOpen, setIsOpen] = useState(false);
@@ -164,7 +164,7 @@ export default function FitBuddyAgent({ alwaysListening = false }) {
 
                 case 'ai_question': {
                     try {
-                        const aiResponse = await askCoach(command.text);
+                        const aiResponse = await askCoach(apiKey, command.text);
                         // Truncate for speech
                         const shortResponse = aiResponse.length > 200
                             ? aiResponse.substring(0, 200) + '...'
