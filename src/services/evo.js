@@ -8,10 +8,13 @@ class EvoService {
         this.synthesis = window.speechSynthesis;
         this.isListening = false;
         this.isAwake = false;
-        this.wakeWords = ['evo', 'hey evo', 'hey ivo', 'ivo'];
+        this.isSpeaking = false;
+        this.wakeWords = ['evo', 'hey evo', 'hey ivo', 'ivo', 'evil', 'eva'];
         this.awakeTimeout = null;
+        this.restartTimeout = null;
         this.conversationMode = false;
         this.lastProcessedText = '';
+        this.lastProcessedTime = 0;
 
         // Callbacks
         this.onWakeUp = null;
@@ -24,6 +27,14 @@ class EvoService {
         this.appState = null;
         this.appActions = null;
         this.navigate = null;
+
+        // Load voices
+        if (this.synthesis) {
+            this.synthesis.getVoices();
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = () => this.synthesis.getVoices();
+            }
+        }
 
         this.initRecognition();
     }
@@ -45,8 +56,12 @@ class EvoService {
         this.recognition.continuous = true;
         this.recognition.interimResults = true;
         this.recognition.lang = 'en-US';
+        this.recognition.maxAlternatives = 1;
 
         this.recognition.onresult = (event) => {
+            // Don't process while speaking
+            if (this.isSpeaking) return;
+
             let finalTranscript = '';
             let interimTranscript = '';
 
@@ -68,7 +83,7 @@ class EvoService {
                         this.wakeUp();
                         const commandAfterWake = allText.split(wake).pop()?.trim();
                         if (commandAfterWake && commandAfterWake.length > 3) {
-                            this.processCommand(commandAfterWake);
+                            setTimeout(() => this.processCommand(commandAfterWake), 500);
                         }
                         return;
                     }
@@ -78,8 +93,13 @@ class EvoService {
                 }
             } else {
                 // Already awake, process as command
-                if (finalTranscript && finalTranscript !== this.lastProcessedText && finalTranscript.length > 2) {
+                const now = Date.now();
+                if (finalTranscript &&
+                    finalTranscript !== this.lastProcessedText &&
+                    finalTranscript.length > 2 &&
+                    now - this.lastProcessedTime > 1000) {
                     this.lastProcessedText = finalTranscript;
+                    this.lastProcessedTime = now;
                     this.processCommand(finalTranscript);
                 }
                 if (this.onTranscript) {
@@ -89,64 +109,78 @@ class EvoService {
         };
 
         this.recognition.onend = () => {
-            if (this.isListening) {
-                setTimeout(() => {
-                    if (this.isListening) {
-                        try {
-                            this.recognition.start();
-                        } catch (e) {
-                            console.log('Recognition restart failed:', e);
-                        }
-                    }
-                }, 100);
+            // Don't restart if speaking or not listening
+            if (!this.isListening || this.isSpeaking) return;
+
+            // Clear any pending restart
+            if (this.restartTimeout) {
+                clearTimeout(this.restartTimeout);
             }
+
+            // Wait longer before restarting to avoid rapid on/off
+            this.restartTimeout = setTimeout(() => {
+                if (this.isListening && !this.isSpeaking) {
+                    try {
+                        this.recognition.start();
+                    } catch (e) {
+                        // Already started or other error - ignore
+                    }
+                }
+            }, 1000); // Wait 1 second before restart
         };
 
         this.recognition.onerror = (event) => {
-            if (event.error !== 'no-speech' && event.error !== 'aborted') {
-                console.error('Speech recognition error:', event.error);
+            if (event.error === 'no-speech' || event.error === 'aborted') {
+                // Normal, ignore
+                return;
             }
+            console.error('Speech recognition error:', event.error);
         };
     }
 
     wakeUp() {
+        if (this.isAwake) return; // Already awake
+
         this.isAwake = true;
         this.conversationMode = true;
         this.lastProcessedText = '';
+        this.lastProcessedTime = Date.now();
 
         if (this.onWakeUp) this.onWakeUp();
         if (this.onStatusChange) this.onStatusChange('awake');
 
-        this.speak("Yes? I'm listening.");
+        this.speak("Yes?");
         this.resetAwakeTimeout();
     }
 
     resetAwakeTimeout() {
         if (this.awakeTimeout) clearTimeout(this.awakeTimeout);
         this.awakeTimeout = setTimeout(() => {
-            if (this.conversationMode) {
-                this.speak("I'm still here if you need me!");
-                this.resetAwakeTimeout();
-            } else {
-                this.sleep();
-            }
-        }, 15000); // 15 seconds before reminder
+            this.sleep();
+        }, 30000); // 30 seconds before sleeping
     }
 
     sleep() {
         this.isAwake = false;
         this.conversationMode = false;
         this.lastProcessedText = '';
-        if (this.onStatusChange) this.onStatusChange('sleeping');
+        if (this.onStatusChange) this.onStatusChange('listening');
     }
 
     async processCommand(text) {
+        if (!text || text.length < 2) return;
+
         this.resetAwakeTimeout();
+
+        if (this.onStatusChange) this.onStatusChange('processing');
+
         const result = await this.parseAndExecute(text);
 
         if (this.onCommand) {
             this.onCommand({ text, result });
         }
+
+        if (this.onStatusChange) this.onStatusChange('awake');
     }
 
     async parseAndExecute(text) {
@@ -158,7 +192,7 @@ class EvoService {
             if (nameMatch && this.appActions?.updateProfile) {
                 const newName = nameMatch[1];
                 this.appActions.updateProfile({ name: newName });
-                return this.respond(`Done! I've changed your name to ${newName}. What's next?`);
+                return this.respond(`Done! Changed your name to ${newName}. What's next?`);
             }
         }
 
@@ -170,26 +204,18 @@ class EvoService {
                     weight = weight * 0.453592;
                 }
                 this.appActions.updateProfile({ weight });
-                return this.respond(`Got it! Your weight is now ${weight.toFixed(1)} kg. What else?`);
+                return this.respond(`Your weight is now ${weight.toFixed(1)} kg. What else?`);
             }
         }
 
         if (lower.includes('theme') || lower.includes('color')) {
-            if (lower.includes('blue') || lower.includes('ocean')) {
-                this.appActions?.setTheme?.('ocean');
-                return this.respond(`Switched to blue ocean theme! Nice choice. What's next?`);
-            }
-            if (lower.includes('purple') || lower.includes('cosmos')) {
-                this.appActions?.setTheme?.('cosmos');
-                return this.respond(`Purple cosmos theme activated! What else?`);
-            }
-            if (lower.includes('green') || lower.includes('default')) {
-                this.appActions?.setTheme?.('default');
-                return this.respond(`Back to the classic green theme. What's next?`);
-            }
-            if (lower.includes('gold') || lower.includes('sunrise')) {
-                this.appActions?.setTheme?.('sunrise');
-                return this.respond(`Golden sunrise theme is on! What else can I do?`);
+            const themes = { blue: 'blue', ocean: 'blue', purple: 'purple', cosmos: 'purple', green: 'default', gold: 'orange', sunrise: 'orange', pink: 'pink' };
+            for (const [keyword, theme] of Object.entries(themes)) {
+                if (lower.includes(keyword)) {
+                    localStorage.setItem('fitcheck-theme', theme);
+                    document.documentElement.style.setProperty('--accent-primary', theme === 'blue' ? '#00D4FF' : theme === 'purple' ? '#A855F7' : theme === 'orange' ? '#FF9F43' : theme === 'pink' ? '#FF6B9D' : '#00FF87');
+                    return this.respond(`Theme changed! What's next?`);
+                }
             }
         }
 
@@ -199,8 +225,7 @@ class EvoService {
             if (calMatch && this.appActions?.addMeal) {
                 const calories = parseInt(calMatch[1]);
                 this.appActions.addMeal({ name: 'Quick add', calories, protein: 0, carbs: 0, fat: 0 });
-                const totals = this.appState?.getTodaysTotals?.() || {};
-                return this.respond(`Added ${calories} calories. You're now at ${totals.calories + calories} total today. What's next?`);
+                return this.respond(`Added ${calories} calories. What's next?`);
             }
         }
 
@@ -213,44 +238,36 @@ class EvoService {
             }
         }
 
-        if ((lower.includes('log') || lower.includes('add')) && (lower.includes('meal') || lower.includes('ate') || lower.includes('had'))) {
-            // Will use AI to estimate
-            return this.respond(`Tell me more about what you ate and I'll log it for you.`);
-        }
-
         // === WATER COMMANDS ===
         if (lower.includes('water') || lower.includes('drank') || lower.includes('drink')) {
-            const mlMatch = lower.match(/(\d+)\s*(ml|milliliter)/i);
-            const glassMatch = lower.match(/(\d+)?\s*(glass|glasses)/i);
-            const literMatch = lower.match(/(\d+\.?\d*)?\s*(liter|litre|l\b)/i);
+            if (!lower.includes('how') && !lower.includes('what')) {
+                const mlMatch = lower.match(/(\d+)\s*(ml|milliliter)/i);
+                const glassMatch = lower.match(/(\d+)?\s*(glass|glasses)/i);
+                const literMatch = lower.match(/(\d+\.?\d*)?\s*(liter|litre|l\b)/i);
 
-            let amount = 250;
-            if (mlMatch) amount = parseInt(mlMatch[1]);
-            else if (literMatch) amount = parseFloat(literMatch[1] || 1) * 1000;
-            else if (glassMatch) amount = parseInt(glassMatch[1] || 1) * 250;
+                let amount = 250;
+                if (mlMatch) amount = parseInt(mlMatch[1]);
+                else if (literMatch) amount = parseFloat(literMatch[1] || 1) * 1000;
+                else if (glassMatch) amount = parseInt(glassMatch[1] || 1) * 250;
 
-            if (this.appActions?.addWater) {
-                this.appActions.addWater(amount);
-                const today = new Date().toISOString().split('T')[0];
-                const total = (this.appState?.waterIntake?.[today] || 0) + amount;
-                const goal = this.appState?.waterGoal || 2500;
-                const remaining = Math.max(goal - total, 0);
-                return this.respond(`Added ${amount}ml water. You've had ${total}ml today. ${remaining > 0 ? `${remaining}ml to go!` : 'Goal reached! 🎉'} What else?`);
+                if (this.appActions?.addWater) {
+                    this.appActions.addWater(amount);
+                    return this.respond(`Added ${amount} ml water. What's next?`);
+                }
             }
         }
 
         // === SUPPLEMENT COMMANDS ===
-        if (lower.includes('creatine') || lower.includes('protein') || lower.includes('vitamin') || lower.includes('supplement') || lower.includes('took')) {
+        if (lower.includes('creatine') || lower.includes('protein shake') || lower.includes('vitamin') || lower.includes('took my')) {
             let name = 'Supplement', amount = 1, unit = 'serving';
 
             if (lower.includes('creatine')) { name = 'Creatine'; amount = 5; unit = 'g'; }
             else if (lower.includes('protein')) { name = 'Protein Shake'; amount = 30; unit = 'g'; }
             else if (lower.includes('vitamin')) { name = 'Multivitamin'; amount = 1; unit = 'tablet'; }
-            else if (lower.includes('omega')) { name = 'Omega-3'; amount = 1000; unit = 'mg'; }
 
             if (this.appActions?.logSupplement) {
                 this.appActions.logSupplement({ name, amount, unit });
-                return this.respond(`Logged ${amount}${unit} of ${name}. Great discipline! What's next?`);
+                return this.respond(`Logged ${name}. What's next?`);
             }
         }
 
@@ -258,130 +275,86 @@ class EvoService {
         if (lower.includes('start') && lower.includes('fast')) {
             if (this.appActions?.startFast) {
                 this.appActions.startFast(16, '16:8');
-                return this.respond(`Started your 16:8 fast. Stay strong! I'll track your progress. What else?`);
+                return this.respond(`Started your fast. Stay strong! What else?`);
             }
         }
         if ((lower.includes('end') || lower.includes('stop') || lower.includes('break')) && lower.includes('fast')) {
             if (this.appActions?.endFast) {
                 this.appActions.endFast(true);
-                return this.respond(`Fast completed! Great job on your discipline. What's next?`);
+                return this.respond(`Fast completed! What's next?`);
             }
         }
 
         // === NAVIGATION COMMANDS ===
         const navMappings = {
-            'settings': '/settings', 'setting': '/settings',
-            'sleep': '/sleep', 'sleep tracker': '/sleep',
-            'progress': '/progress', 'stats': '/progress',
-            'workout': '/workout', 'exercise': '/workout',
-            'water': '/water', 'hydration': '/water',
-            'fasting': '/fasting', 'fast': '/fasting',
-            'coach': '/coach', 'ai coach': '/coach',
-            'scanner': '/scanner', 'scan': '/scanner',
-            'prayer': '/prayer', 'journal': '/prayer',
-            'supplements': '/supplements', 'supps': '/supplements',
-            'gallery': '/gallery', 'photos': '/gallery',
-            'meals': '/meal-planner', 'meal planner': '/meal-planner',
-            'home': '/', 'dashboard': '/',
-            'calendar': '/calendar',
+            'settings': '/settings', 'sleep': '/sleep', 'progress': '/progress',
+            'workout': '/workout', 'water': '/water', 'fasting': '/fasting',
+            'coach': '/coach', 'scanner': '/scanner', 'prayer': '/prayer',
+            'supplements': '/supplements', 'gallery': '/gallery', 'photos': '/gallery',
+            'meals': '/meal-planner', 'home': '/', 'dashboard': '/', 'calendar': '/calendar',
         };
 
         for (const [keyword, path] of Object.entries(navMappings)) {
-            if (lower.includes(keyword) && (lower.includes('open') || lower.includes('go to') || lower.includes('show') || lower.includes('navigate'))) {
+            if (lower.includes(keyword) && (lower.includes('open') || lower.includes('go') || lower.includes('show'))) {
                 if (this.navigate) {
                     this.navigate(path);
-                    return this.respond(`Opening ${keyword}. What would you like to know or do there?`);
+                    return this.respond(`Opening ${keyword}. What else?`);
                 }
             }
         }
 
         // === QUERY COMMANDS ===
-
-        // Sleep queries
-        if (lower.includes('sleep') && (lower.includes('how') || lower.includes('what') || lower.includes('quality') || lower.includes('last night'))) {
-            const lastSleep = this.appState?.getLastNightsSleep?.();
-            if (lastSleep) {
-                const qualityWords = ['', 'terrible', 'poor', 'okay', 'good', 'excellent'];
-                return this.respond(`Last night you slept ${lastSleep.duration} hours, from ${lastSleep.bedtime} to ${lastSleep.wakeTime}. Quality was ${qualityWords[lastSleep.quality] || 'not rated'}. What else would you like to know?`);
-            } else {
-                return this.respond(`I don't have sleep data for last night. Would you like to log it?`);
-            }
-        }
-
-        // Calorie queries
-        if (lower.includes('calorie') && (lower.includes('how many') || lower.includes('what') || lower.includes('today') || lower.includes('left') || lower.includes('remaining'))) {
-            const totals = this.appState?.getTodaysTotals?.() || {};
+        if (lower.includes('calorie') && (lower.includes('how') || lower.includes('what'))) {
+            const totals = this.appState?.getTodaysTotals?.() || { calories: 0 };
             const target = this.appState?.targets?.calories || 2000;
-            const remaining = Math.max(target - totals.calories, 0);
-            return this.respond(`You've eaten ${totals.calories} calories today. ${remaining} calories remaining out of your ${target} goal. What else?`);
+            return this.respond(`You've had ${totals.calories} calories. ${target - totals.calories} remaining. What else?`);
         }
 
-        // Protein queries
-        if (lower.includes('protein') && (lower.includes('how') || lower.includes('what') || lower.includes('tell'))) {
-            const totals = this.appState?.getTodaysTotals?.() || {};
-            const target = this.appState?.targets?.protein || 150;
-            return this.respond(`You've had ${totals.protein}g of protein today. Target is ${target}g. What's next?`);
-        }
-
-        // Water queries
-        if (lower.includes('water') && (lower.includes('how much') || lower.includes('what'))) {
+        if (lower.includes('water') && (lower.includes('how') || lower.includes('what'))) {
             const today = new Date().toISOString().split('T')[0];
             const water = this.appState?.waterIntake?.[today] || 0;
-            const goal = this.appState?.waterGoal || 2500;
-            return this.respond(`You've had ${water}ml of water today. Goal is ${goal}ml. What else?`);
+            return this.respond(`You've had ${water} ml water today. What else?`);
         }
 
-        // Weight queries
-        if (lower.includes('weight') && (lower.includes('what') || lower.includes('my'))) {
-            const weight = this.appState?.profile?.weight || 'not set';
-            return this.respond(`Your current weight is ${weight} kg. Would you like to update it?`);
-        }
-
-        // Profile queries
-        if (lower.includes('my name') || (lower.includes('who') && lower.includes('am i'))) {
-            const name = this.appState?.profile?.name || 'friend';
-            return this.respond(`Your name is ${name}. What would you like me to do?`);
+        if (lower.includes('weight') && lower.includes('my')) {
+            const weight = this.appState?.profile?.weight || 0;
+            return this.respond(`Your weight is ${weight} kg. What else?`);
         }
 
         // === WEB SEARCH ===
-        if (lower.includes('search') || lower.includes('google') || lower.includes('look up') || lower.includes('find out')) {
-            const query = text.replace(/search|google|look up|find out|for|about/gi, '').trim();
+        if (lower.includes('search') || lower.includes('google') || lower.includes('look up')) {
+            const query = text.replace(/search|google|look up|for|about/gi, '').trim();
             if (query.length > 3) {
-                // Open web search
                 window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
-                return this.respond(`I've opened a search for "${query}". What else can I help with?`);
+                return this.respond(`Searching for ${query}. What else?`);
             }
         }
 
-        // === HELP & GENERAL ===
-        if (lower.includes('what can you do') || lower.includes('help')) {
-            return this.respond(`I'm Evo, your fitness AI! I can: add calories, log water, track supplements, check your stats, change settings, open any page, search the web, and answer questions. Just ask! What would you like?`);
+        // === HELP ===
+        if (lower.includes('help') || lower.includes('what can you do')) {
+            return this.respond(`I can add calories, log water, track supplements, open pages, check your stats, and answer questions. Try saying: add 500 calories, or, open settings.`);
         }
 
-        if (lower.includes('thank') || lower.includes('thanks')) {
-            return this.respond(`You're welcome! Anything else I can help with?`);
+        if (lower.includes('thank')) {
+            return this.respond(`You're welcome! Anything else?`);
         }
 
-        if (lower.includes('goodbye') || lower.includes('bye') || lower.includes('that\'s all')) {
+        if (lower.includes('bye') || lower.includes('goodbye') || lower.includes("that's all")) {
             this.conversationMode = false;
-            return this.respond(`Goodbye! Say "Evo" anytime you need me.`);
+            this.sleep();
+            return this.respond(`Goodbye! Say Evo anytime.`);
         }
 
-        // === AI FALLBACK - Ask GPT ===
+        // === AI FALLBACK ===
         return this.askAI(text);
     }
 
     async askAI(question) {
         if (!this.appState?.apiKey) {
-            return this.respond(`I need an API key to answer that. Please set it up in settings. What else can I help with?`);
+            return this.respond(`I need an API key for that. Set it in settings. What else?`);
         }
 
         try {
-            // Build context about app state
-            const totals = this.appState?.getTodaysTotals?.() || {};
-            const profile = this.appState?.profile || {};
-            const context = `User: ${profile.name}, Weight: ${profile.weight}kg, Goal: ${profile.goal}. Today's intake: ${totals.calories} cal, ${totals.protein}g protein.`;
-
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -393,11 +366,11 @@ class EvoService {
                     messages: [
                         {
                             role: 'system',
-                            content: `You are Evo, a Christian faith-integrated fitness AI assistant. Be conversational, brief (under 80 words), and always end with "What else?" or "What's next?" to keep the conversation going. Include scripture when relevant. User context: ${context}`
+                            content: `You are Evo, a brief fitness AI. Keep responses under 50 words. End with "What else?" or "What's next?"`
                         },
                         { role: 'user', content: question }
                     ],
-                    max_tokens: 200
+                    max_tokens: 100
                 })
             });
 
@@ -405,7 +378,7 @@ class EvoService {
             const answer = data.choices?.[0]?.message?.content || "I couldn't process that.";
             return this.respond(answer);
         } catch (e) {
-            return this.respond(`I had trouble answering that. What else can I help with?`);
+            return this.respond(`Sorry, I had an error. What else can I help with?`);
         }
     }
 
@@ -435,7 +408,9 @@ class EvoService {
         this.isListening = false;
         this.isAwake = false;
         this.conversationMode = false;
+        this.isSpeaking = false;
         if (this.awakeTimeout) clearTimeout(this.awakeTimeout);
+        if (this.restartTimeout) clearTimeout(this.restartTimeout);
         if (this.recognition) {
             try { this.recognition.stop(); } catch (e) { }
         }
@@ -443,20 +418,55 @@ class EvoService {
     }
 
     speak(text) {
-        if (!this.synthesis) return;
+        if (!this.synthesis) {
+            console.log('Evo says:', text);
+            return;
+        }
+
+        // Stop recognition while speaking to avoid feedback
+        this.isSpeaking = true;
+        if (this.recognition) {
+            try { this.recognition.stop(); } catch (e) { }
+        }
+
         this.synthesis.cancel();
 
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 1.1;
+        utterance.rate = 1.0;
         utterance.pitch = 1;
         utterance.volume = 1;
 
         const voices = this.synthesis.getVoices();
+        // Prefer a good English voice
         const preferredVoice = voices.find(v =>
-            v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Microsoft')
-        ) || voices[0];
+            v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Microsoft') || v.name.includes('Natural'))
+        ) || voices.find(v => v.lang.startsWith('en')) || voices[0];
 
         if (preferredVoice) utterance.voice = preferredVoice;
+
+        utterance.onend = () => {
+            this.isSpeaking = false;
+            // Resume listening after speaking
+            if (this.isListening) {
+                setTimeout(() => {
+                    try {
+                        this.recognition.start();
+                    } catch (e) { }
+                }, 300);
+            }
+        };
+
+        utterance.onerror = () => {
+            this.isSpeaking = false;
+            if (this.isListening) {
+                setTimeout(() => {
+                    try {
+                        this.recognition.start();
+                    } catch (e) { }
+                }, 300);
+            }
+        };
+
         this.synthesis.speak(utterance);
     }
 
