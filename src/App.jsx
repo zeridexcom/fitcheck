@@ -25,6 +25,7 @@ import Fasting from './pages/Fasting';
 import Settings from './pages/Settings';
 import Calendar from './pages/Calendar';
 import Supplements from './pages/Supplements';
+import MealPlanner from './pages/MealPlanner';
 
 import './index.css';
 
@@ -85,6 +86,7 @@ function AppContent() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/supplements" element={<Supplements />} />
+          <Route path="/meal-planner" element={<MealPlanner />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>

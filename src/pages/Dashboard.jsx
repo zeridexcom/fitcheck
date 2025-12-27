@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer, MessageCircle, Pill } from 'lucide-react';
+import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer, MessageCircle, Pill, Utensils } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import useStore from '../stores/useStore';
@@ -355,6 +355,19 @@ export default function Dashboard({ onVoiceClick }) {
                         <Pill size={16} />
                     </div>
                     <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Supps</span>
+                </motion.button>
+
+                <motion.button
+                    className="glass-card"
+                    onClick={() => navigate('/meal-planner')}
+                    whileHover={{ scale: 1.03, y: -4 }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                >
+                    <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(255, 159, 67, 0.15)', color: '#FF9F43' }}>
+                        <Utensils size={16} />
+                    </div>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Meals</span>
                 </motion.button>
             </motion.div>
 
