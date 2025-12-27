@@ -5,7 +5,8 @@ import useStore from './stores/useStore';
 import Link from 'react-router-dom';
 import BottomNav from './components/BottomNav';
 import ParticleBackground from './components/ParticleBackground';
-import EvoAgent from './components/EvoAgent';
+// Voice agent disabled for now - can re-enable later
+// import EvoAgent from './components/EvoAgent';
 
 // Onboarding Pages
 import Welcome from './pages/Onboarding/Welcome';
@@ -92,7 +93,8 @@ function AppContent() {
         </Routes>
       </AnimatePresence>
       <BottomNav />
-      <EvoAgent />
+      {/* Voice agent disabled - uncomment to re-enable */}
+      {/* <EvoAgent /> */}
     </>
   );
 }
