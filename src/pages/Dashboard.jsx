@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer, MessageCircle, Pill, Utensils, Moon, ImagePlus } from 'lucide-react';
+import { Plus, Camera, Flame, Zap, Activity, Sparkles, Droplets, Trophy, Mic, Timer, MessageCircle, Pill, Utensils, Moon, ImagePlus, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import useStore from '../stores/useStore';
@@ -9,6 +9,7 @@ import Card3D from '../components/Card3D';
 import GlowButton from '../components/GlowButton';
 import TodayWorkout from '../components/TodayWorkout';
 import MacroAlerts from '../components/MacroAlerts';
+import DailyVerse from '../components/DailyVerse';
 
 export default function Dashboard({ onVoiceClick }) {
     const navigate = useNavigate();
@@ -82,6 +83,9 @@ export default function Dashboard({ onVoiceClick }) {
 
             {/* Macro Danger Zone Alerts */}
             <MacroAlerts />
+
+            {/* Daily Bible Verse */}
+            <DailyVerse compact />
 
             {/* Header with Streak */}
             <motion.div
@@ -398,6 +402,19 @@ export default function Dashboard({ onVoiceClick }) {
                         <ImagePlus size={16} />
                     </div>
                     <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Photos</span>
+                </motion.button>
+
+                <motion.button
+                    className="glass-card"
+                    onClick={() => navigate('/prayer')}
+                    whileHover={{ scale: 1.03, y: -4 }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{ flex: '1 1 calc(25% - 8px)', minWidth: '70px', padding: '14px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none' }}
+                >
+                    <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(255, 215, 0, 0.15)', color: '#FFD700' }}>
+                        <BookOpen size={16} />
+                    </div>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Prayer</span>
                 </motion.button>
             </motion.div>
 

@@ -110,6 +110,10 @@ const useStore = create(
             progressPhotos: [],  // { id, date, imageData, weight, notes, type: 'front'|'side'|'back' }
             progressPhotoPrivacy: true,  // blur photos by default
 
+            // === FAITH & PRAYER ===
+            savedVerses: [],  // { reference, text, category }
+            prayerJournal: [],  // { id, date, type: 'gratitude'|'prayer', items or text }
+
             // === ACTIONS ===
 
             completeOnboarding: () => set({ hasOnboarded: true }),
@@ -692,6 +696,26 @@ const useStore = create(
 
             togglePhotoPrivacy: () => set((state) => ({
                 progressPhotoPrivacy: !state.progressPhotoPrivacy
+            })),
+
+            // === FAITH & PRAYER ACTIONS ===
+            saveVerse: (verse) => set((state) => {
+                if (state.savedVerses.some(v => v.reference === verse.reference)) {
+                    return state;
+                }
+                return { savedVerses: [...state.savedVerses, verse] };
+            }),
+
+            addPrayerEntry: (entry) => set((state) => ({
+                prayerJournal: [...state.prayerJournal, {
+                    id: Date.now().toString(),
+                    date: new Date().toISOString().split('T')[0],
+                    ...entry
+                }]
+            })),
+
+            deletePrayerEntry: (id) => set((state) => ({
+                prayerJournal: state.prayerJournal.filter(e => e.id !== id)
             })),
 
             // Reset all
