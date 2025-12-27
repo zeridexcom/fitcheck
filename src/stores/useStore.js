@@ -101,6 +101,10 @@ const useStore = create(
                 { id: 'omega3', name: 'Omega-3', amount: 1000, unit: 'mg' },
             ],
 
+            // === SLEEP TRACKING ===
+            sleepHistory: [],  // { date, bedtime, wakeTime, duration, quality, notes }
+            sleepGoal: 8,  // hours
+
             // === ACTIONS ===
 
             completeOnboarding: () => set({ hasOnboarded: true }),
@@ -617,6 +621,54 @@ const useStore = create(
             getTodaySupplements: () => {
                 const today = new Date().toISOString().split('T')[0];
                 return get().supplements.filter(s => s.date === today);
+            },
+
+            // === SLEEP ACTIONS ===
+            logSleep: (sleepData) => set((state) => ({
+                sleepHistory: [...state.sleepHistory, {
+                    id: Date.now().toString(),
+                    date: new Date().toISOString().split('T')[0],
+                    ...sleepData
+                }]
+            })),
+
+            setSleepGoal: (hours) => set({ sleepGoal: hours }),
+
+            getLastNightsSleep: () => {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+                const today = new Date().toISOString().split('T')[0];
+
+                return get().sleepHistory.find(s => s.date === today || s.date === yesterdayStr);
+            },
+
+            getWeeklySleepStats: () => {
+                const { sleepHistory, sleepGoal } = get();
+                const last7Days = [];
+
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    const sleep = sleepHistory.find(s => s.date === dateStr);
+                    last7Days.push({
+                        date: dateStr,
+                        duration: sleep?.duration || 0,
+                        quality: sleep?.quality || 0
+                    });
+                }
+
+                const totalSleep = last7Days.reduce((sum, d) => sum + d.duration, 0);
+                const avgSleep = last7Days.filter(d => d.duration > 0).length > 0
+                    ? totalSleep / last7Days.filter(d => d.duration > 0).length
+                    : 0;
+
+                return {
+                    days: last7Days.reverse(),
+                    avgDuration: Math.round(avgSleep * 10) / 10,
+                    goalMet: avgSleep >= sleepGoal
+                };
             },
 
             // Reset all
