@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fitcheck-v2';
+const CACHE_NAME = 'fitcheck-v3';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -30,13 +30,25 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Fetch strategy: Network first, fallback to cache
+// Fetch strategy: Network first, but NEVER cache API calls
 self.addEventListener('fetch', (event) => {
+    const url = event.request.url;
+
+    // NEVER cache API calls - always go to network
+    if (url.includes('api.openai.com') ||
+        url.includes('openrouter.ai') ||
+        url.includes('api.') ||
+        event.request.method !== 'GET') {
+        event.respondWith(fetch(event.request));
+        return;
+    }
+
+    // For app files: Network first, fallback to cache
     event.respondWith(
         fetch(event.request)
             .then((response) => {
-                // Clone and cache successful responses
-                if (response.status === 200) {
+                // Only cache successful GET requests for same-origin
+                if (response.status === 200 && event.request.url.startsWith(self.location.origin)) {
                     const responseClone = response.clone();
                     caches.open(CACHE_NAME)
                         .then((cache) => cache.put(event.request, responseClone));
