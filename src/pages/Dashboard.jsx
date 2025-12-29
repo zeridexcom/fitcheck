@@ -314,7 +314,7 @@ export default function Dashboard() {
                     <div className="icon-badge icon-badge-primary" style={{ width: 36, height: 36 }}>
                         <Camera size={16} />
                     </div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Scan</span>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>Scan</span>
                 </motion.button>
 
                 <motion.button
@@ -327,7 +327,7 @@ export default function Dashboard() {
                     <div className="icon-badge icon-badge-orange" style={{ width: 36, height: 36 }}>
                         <Timer size={16} />
                     </div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Fast</span>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>Fast</span>
                 </motion.button>
 
                 <motion.button
@@ -340,7 +340,7 @@ export default function Dashboard() {
                     <div className="icon-badge icon-badge-secondary" style={{ width: 36, height: 36 }}>
                         <Sparkles size={16} />
                     </div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Coach</span>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>Coach</span>
                 </motion.button>
 
                 <motion.button
@@ -353,7 +353,7 @@ export default function Dashboard() {
                     <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(236, 72, 153, 0.15)', color: '#EC4899' }}>
                         <Pill size={16} />
                     </div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Supps</span>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>Supps</span>
                 </motion.button>
 
                 <motion.button
@@ -366,7 +366,7 @@ export default function Dashboard() {
                     <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(255, 159, 67, 0.15)', color: '#FF9F43' }}>
                         <Utensils size={16} />
                     </div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Meals</span>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>Meals</span>
                 </motion.button>
 
                 <motion.button
@@ -379,7 +379,7 @@ export default function Dashboard() {
                     <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(99, 102, 241, 0.15)', color: '#6366F1' }}>
                         <Moon size={16} />
                     </div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Sleep</span>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>Sleep</span>
                 </motion.button>
 
                 <motion.button
@@ -392,7 +392,7 @@ export default function Dashboard() {
                     <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(168, 85, 247, 0.15)', color: '#A855F7' }}>
                         <ImagePlus size={16} />
                     </div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Photos</span>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>Photos</span>
                 </motion.button>
 
                 <motion.button
@@ -405,7 +405,7 @@ export default function Dashboard() {
                     <div className="icon-badge" style={{ width: 36, height: 36, background: 'rgba(255, 215, 0, 0.15)', color: '#FFD700' }}>
                         <BookOpen size={16} />
                     </div>
-                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600 }}>Prayer</span>
+                    <span style={{ fontSize: 'var(--font-size-xs)', fontWeight: 600, color: 'var(--text-primary)' }}>Prayer</span>
                 </motion.button>
             </motion.div>
 
