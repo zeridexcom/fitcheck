@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Dumbbell, Clock, Flame, X, Check, Zap, Heart, Activity } from 'lucide-react';
+import { Plus, Dumbbell, Clock, Flame, X, Check, Zap, Heart, Activity, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import useStore from '../stores/useStore';
+import TodaysWorkoutCard from '../components/TodaysWorkoutCard';
 
 const exerciseCategories = [
     {
@@ -42,7 +44,8 @@ const exerciseCategories = [
 ];
 
 export default function Workout() {
-    const { workouts, addWorkout } = useStore();
+    const navigate = useNavigate();
+    const { workouts, addWorkout, workoutPlan } = useStore();
 
     const [showModal, setShowModal] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -88,6 +91,49 @@ export default function Workout() {
                     </p>
                 </div>
             </motion.div>
+
+            {/* Build Routine Button */}
+            {!workoutPlan && (
+                <motion.button
+                    className="glass-card glass-card-elevated mb-lg"
+                    onClick={() => navigate('/workout-builder')}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 16,
+                        padding: 20,
+                        cursor: 'pointer',
+                        border: '2px dashed var(--accent-primary)',
+                        background: 'var(--accent-primary-soft)'
+                    }}
+                >
+                    <div className="icon-badge icon-badge-primary" style={{ width: 48, height: 48 }}>
+                        <Sparkles size={22} />
+                    </div>
+                    <div style={{ textAlign: 'left' }}>
+                        <h4 style={{ marginBottom: 4 }}>Build Your Workout Routine</h4>
+                        <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--text-tertiary)' }}>
+                            AI creates a personalized 5-7 day plan
+                        </p>
+                    </div>
+                </motion.button>
+            )}
+
+            {/* Today's Workout Plan */}
+            {workoutPlan && (
+                <motion.div
+                    className="mb-lg"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <TodaysWorkoutCard />
+                </motion.div>
+            )}
 
             {/* Today's Summary */}
             <motion.div

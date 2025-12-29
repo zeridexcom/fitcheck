@@ -90,6 +90,10 @@ const useStore = create(
             // === WORKOUT PLAN ===
             workoutPlan: null, // Generated workout plan
 
+            // === WORKOUT PROGRESS ===
+            // Tracks completed sets per day: { 'YYYY-MM-DD': { 'exerciseId': [1, 2, 3] } }
+            workoutProgress: {},
+
             // === TODAY'S WORKOUT ===
             todayWorkout: {
                 exercises: [],
@@ -721,6 +725,68 @@ const useStore = create(
             deletePrayerEntry: (id) => set((state) => ({
                 prayerJournal: state.prayerJournal.filter(e => e.id !== id)
             })),
+
+            // === WORKOUT PLAN ACTIONS ===
+            setWorkoutPlan: (plan) => set({ workoutPlan: plan }),
+
+            getTodaysWorkoutPlan: () => {
+                const { workoutPlan } = get();
+                if (!workoutPlan?.days) return null;
+
+                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                const today = dayNames[new Date().getDay()];
+
+                return workoutPlan.days.find(d => d.day === today) || null;
+            },
+
+            completeSet: (exerciseId, setNumber) => {
+                const today = new Date().toISOString().split('T')[0];
+                set((state) => {
+                    const progress = { ...state.workoutProgress };
+                    if (!progress[today]) progress[today] = {};
+                    if (!progress[today][exerciseId]) progress[today][exerciseId] = [];
+
+                    if (!progress[today][exerciseId].includes(setNumber)) {
+                        progress[today][exerciseId] = [...progress[today][exerciseId], setNumber].sort((a, b) => a - b);
+                    }
+
+                    return { workoutProgress: progress };
+                });
+            },
+
+            isSetCompleted: (exerciseId, setNumber) => {
+                const today = new Date().toISOString().split('T')[0];
+                const { workoutProgress } = get();
+                return workoutProgress[today]?.[exerciseId]?.includes(setNumber) || false;
+            },
+
+            getWorkoutProgress: () => {
+                const today = new Date().toISOString().split('T')[0];
+                const { workoutProgress, workoutPlan } = get();
+                const todaysProgress = workoutProgress[today] || {};
+
+                const todayPlan = get().getTodaysWorkoutPlan();
+                if (!todayPlan?.exercises?.length) return { completed: 0, total: 0, percentage: 0 };
+
+                let completedSets = 0;
+                let totalSets = 0;
+
+                todayPlan.exercises.forEach(ex => {
+                    totalSets += ex.sets || 0;
+                    completedSets += (todaysProgress[ex.id] || []).length;
+                });
+
+                return {
+                    completed: completedSets,
+                    total: totalSets,
+                    percentage: totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0
+                };
+            },
+
+            isWorkoutComplete: () => {
+                const { completed, total } = get().getWorkoutProgress();
+                return total > 0 && completed >= total;
+            },
 
             // Reset all
             resetAll: () => set({
