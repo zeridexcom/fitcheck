@@ -12,7 +12,7 @@ const quickPrompts = [
 
 export default function Coach() {
     const messagesEndRef = useRef(null);
-    const { apiKey, profile, targets, chatHistory, addChatMessage, clearChat } = useStore();
+    const { getApiKey, profile, targets, chatHistory, addChatMessage, clearChat } = useStore();
 
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -27,6 +27,8 @@ export default function Coach() {
 
     const sendMessage = async (message) => {
         if (!message.trim() || loading) return;
+
+        const apiKey = getApiKey();
         if (!apiKey) {
             addChatMessage('assistant', "I need an OpenAI API key to help you. Please check your settings.");
             return;

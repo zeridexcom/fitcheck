@@ -6,7 +6,11 @@ const useStore = create(
         (set, get) => ({
             // === ONBOARDING STATE ===
             hasOnboarded: false,
+            // API key: Always check env variable first, then fallback to stored key
             apiKey: import.meta.env.VITE_OPENAI_API_KEY || null,
+
+            // Getter to always get the most current API key (env takes priority)
+            getApiKey: () => import.meta.env.VITE_OPENAI_API_KEY || get().apiKey,
 
             // === USER PROFILE ===
             profile: {
