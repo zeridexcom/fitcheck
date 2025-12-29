@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fitcheck-v1';
+const CACHE_NAME = 'fitcheck-v2';
 const urlsToCache = [
     '/',
     '/index.html',
