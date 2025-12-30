@@ -1,11 +1,11 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Camera, Droplets, MessageCircle, Settings } from 'lucide-react';
+import { Home, Camera, Dumbbell, MessageCircle, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const navItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/scanner', icon: Camera, label: 'Scan' },
-    { path: '/water', icon: Droplets, label: 'Water' },
+    { path: '/workout', icon: Dumbbell, label: 'Workout' },
     { path: '/coach', icon: MessageCircle, label: 'Coach' },
     { path: '/settings', icon: Settings, label: 'More' },
 ];
