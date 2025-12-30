@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dumbbell, ChevronRight, ChevronLeft, Sparkles, Check, Loader2 } from 'lucide-react';
+import { Dumbbell, ChevronRight, ChevronLeft, ChevronDown, ChevronUp, Sparkles, Check, Loader2, Edit2, Trash2, Plus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useStore from '../stores/useStore';
 
@@ -217,6 +217,28 @@ Include 4-6 exercises per day. For rest days, use exercises: [] and name: "Rest 
         navigate('/workout');
     };
 
+    const [expandedDay, setExpandedDay] = useState(null);
+    const [editingExercise, setEditingExercise] = useState(null);
+
+    const toggleDay = (dayIndex) => {
+        setExpandedDay(expandedDay === dayIndex ? null : dayIndex);
+    };
+
+    const deleteExercise = (dayIndex, exerciseId) => {
+        const updated = { ...generatedPlan };
+        updated.days[dayIndex].exercises = updated.days[dayIndex].exercises.filter(e => e.id !== exerciseId);
+        setGeneratedPlan(updated);
+    };
+
+    const updateExercise = (dayIndex, exerciseId, field, value) => {
+        const updated = { ...generatedPlan };
+        const exercise = updated.days[dayIndex].exercises.find(e => e.id === exerciseId);
+        if (exercise) {
+            exercise[field] = value;
+            setGeneratedPlan(updated);
+        }
+    };
+
     // Show generated plan preview
     if (generatedPlan) {
         return (
@@ -229,34 +251,123 @@ Include 4-6 exercises per day. For rest days, use exercises: [] and name: "Rest 
                         <div className="icon-badge icon-badge-primary" style={{ width: 56, height: 56 }}>
                             <Sparkles size={24} />
                         </div>
-                        <h2 style={{ marginTop: 16 }}>{generatedPlan.name}</h2>
-                        <p style={{ color: 'var(--text-secondary)' }}>Your personalized workout plan</p>
+                        <h2 style={{ marginTop: 16, color: 'var(--text-primary)' }}>{generatedPlan.name}</h2>
+                        <p style={{ color: 'var(--text-secondary)' }}>Tap a day to view & edit exercises</p>
                     </div>
 
                     <div className="flex flex-col gap-md mb-xl">
-                        {generatedPlan.days.map((day, i) => (
+                        {generatedPlan.days.map((day, dayIndex) => (
                             <motion.div
-                                key={i}
+                                key={dayIndex}
                                 className="glass-card"
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: i * 0.1 }}
+                                transition={{ delay: dayIndex * 0.05 }}
+                                style={{ overflow: 'hidden' }}
                             >
-                                <div className="flex justify-between items-center">
+                                {/* Day Header - Clickable */}
+                                <div
+                                    className="flex justify-between items-center"
+                                    onClick={() => toggleDay(dayIndex)}
+                                    style={{ cursor: 'pointer', padding: '4px 0' }}
+                                >
                                     <div>
-                                        <h4 style={{ marginBottom: 4 }}>{day.day}</h4>
+                                        <h4 style={{ marginBottom: 4, color: 'var(--text-primary)' }}>{day.day}</h4>
                                         <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--accent-primary)' }}>
                                             {day.name}
                                         </p>
+                                        {day.focus && (
+                                            <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)', marginTop: 4 }}>
+                                                {day.focus}
+                                            </p>
+                                        )}
                                     </div>
-                                    <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>
-                                        {day.exercises?.length || 0} exercises
-                                    </span>
+                                    <div className="flex items-center gap-sm">
+                                        <span style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>
+                                            {day.exercises?.length || 0} exercises
+                                        </span>
+                                        {expandedDay === dayIndex ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                    </div>
                                 </div>
-                                {day.focus && (
-                                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)', marginTop: 8 }}>
-                                        {day.focus}
-                                    </p>
+
+                                {/* Expanded Exercise List */}
+                                <AnimatePresence>
+                                    {expandedDay === dayIndex && day.exercises?.length > 0 && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            style={{ overflow: 'hidden', marginTop: 16 }}
+                                        >
+                                            <div className="flex flex-col gap-sm">
+                                                {day.exercises.map((exercise, exIndex) => (
+                                                    <motion.div
+                                                        key={exercise.id}
+                                                        className="glass-card"
+                                                        style={{
+                                                            padding: '12px 16px',
+                                                            background: 'rgba(255,255,255,0.03)'
+                                                        }}
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        transition={{ delay: exIndex * 0.05 }}
+                                                    >
+                                                        <div className="flex justify-between items-start">
+                                                            <div style={{ flex: 1 }}>
+                                                                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                                                    {exercise.name}
+                                                                </span>
+                                                                <div className="flex gap-md mt-sm" style={{ fontSize: 'var(--font-size-sm)' }}>
+                                                                    <span style={{ color: 'var(--accent-primary)' }}>
+                                                                        {exercise.sets} sets
+                                                                    </span>
+                                                                    <span style={{ color: 'var(--text-tertiary)' }}>
+                                                                        × {exercise.reps} reps
+                                                                    </span>
+                                                                </div>
+                                                                {exercise.notes && (
+                                                                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)', marginTop: 6, fontStyle: 'italic' }}>
+                                                                        💡 {exercise.notes}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                            <motion.button
+                                                                onClick={() => deleteExercise(dayIndex, exercise.id)}
+                                                                whileTap={{ scale: 0.9 }}
+                                                                style={{
+                                                                    background: 'rgba(255,100,100,0.1)',
+                                                                    border: 'none',
+                                                                    borderRadius: 6,
+                                                                    padding: 8,
+                                                                    cursor: 'pointer',
+                                                                    color: '#ff6464'
+                                                                }}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </motion.button>
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                {/* Rest day message */}
+                                {expandedDay === dayIndex && (!day.exercises || day.exercises.length === 0) && (
+                                    <motion.div
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        style={{
+                                            marginTop: 16,
+                                            padding: 16,
+                                            textAlign: 'center',
+                                            background: 'rgba(255,255,255,0.03)',
+                                            borderRadius: 8
+                                        }}
+                                    >
+                                        <p style={{ color: 'var(--text-tertiary)' }}>🧘 Rest & Recovery Day</p>
+                                    </motion.div>
                                 )}
                             </motion.div>
                         ))}
