@@ -346,7 +346,7 @@ Include 4-6 exercises per day. For rest days, use exercises: [] and name: "Rest 
                                 >
                                     <div className="flex justify-between items-center">
                                         <div>
-                                            <span style={{ fontWeight: 600 }}>{opt.label}</span>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{opt.label}</span>
                                             {opt.desc && (
                                                 <p style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)', marginTop: 4 }}>
                                                     {opt.desc}
