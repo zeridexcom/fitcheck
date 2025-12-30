@@ -196,7 +196,7 @@ export default function Workout() {
                                 >
                                     <Icon size={22} />
                                 </div>
-                                <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontFamily: 'var(--font-heading)' }}>
+                                <span style={{ fontSize: 'var(--font-size-sm)', fontWeight: 600, fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>
                                     {cat.name}
                                 </span>
                             </motion.button>
