@@ -30,6 +30,7 @@ import Sleep from './pages/Sleep';
 import ProgressGallery from './pages/ProgressGallery';
 import PrayerJournal from './pages/PrayerJournal';
 import WorkoutBuilder from './pages/WorkoutBuilder';
+import CalorieCalculator from './pages/CalorieCalculator';
 
 import './index.css';
 
@@ -91,6 +92,7 @@ function AppContent() {
           <Route path="/gallery" element={<ProgressGallery />} />
           <Route path="/prayer" element={<PrayerJournal />} />
           <Route path="/workout-builder" element={<WorkoutBuilder />} />
+          <Route path="/calorie-calc" element={<CalorieCalculator />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AnimatePresence>
