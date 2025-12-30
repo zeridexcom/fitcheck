@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     Settings as SettingsIcon, Download, Palette, Moon, Sun, User, Bell,
-    Trash2, ChevronRight, Check, Scale, Droplets, Target
+    Trash2, ChevronRight, Check, Scale, Droplets, Target, Calculator
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import useStore from '../stores/useStore';
 import Card3D from '../components/Card3D';
 import GlowButton from '../components/GlowButton';
@@ -17,6 +18,7 @@ const THEMES = [
 ];
 
 export default function Settings() {
+    const navigate = useNavigate();
     const {
         profile, targets, waterGoal, setWaterGoal, meals, workouts,
         weightHistory, resetAll, updateProfile
@@ -138,6 +140,16 @@ export default function Settings() {
                             <div className="nutrition-label">Protein</div>
                         </div>
                     </div>
+
+                    <motion.button
+                        className="btn btn-secondary btn-full mt-md"
+                        onClick={() => navigate('/calorie-calc')}
+                        whileTap={{ scale: 0.98 }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                    >
+                        <Calculator size={18} />
+                        Recalculate Macros
+                    </motion.button>
                 </Card3D>
             </motion.div>
 
